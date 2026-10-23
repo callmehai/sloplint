@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remit invoicing</title>
+<style>
+/* Remit, marketing page. The "what good looks like" counterpart of slop-landing.html.
+   Leads with the product, varies the rhythm of sections, one solid button on the page,
+   five type sizes (14/16/20/32/48), no gradients, shadows, glass or looping motion. */
+:root {
+  --font-body: "Helvetica Neue", Helvetica, sans-serif;
+  --font-display: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --ink: #1c2024;
+  --ink-soft: #3a424c;
+  --muted: #5b6470;
+  --line: #d9dde3;
+  --line-soft: #e9ecf0;
+  --canvas: #f5f6f8;
+  --surface: #ffffff;
+  --hover: #eef0f3;
+  --brand: #1a5fb4;
+  --brand-strong: #154d93;
+  --danger: #b42318;
+  --warning: #8a5a00;
+  --success: #1e7a46;
+  --radius: 6px;
+  --radius-panel: 8px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 26px;
+}
+h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; text-wrap: balance; color: var(--ink); }
+h1 { font-size: 48px; line-height: 56px; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 32px; line-height: 40px; }
+h3 { font-size: 20px; line-height: 28px; }
+p { margin: 0; text-wrap: pretty; }
+a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: var(--brand-strong); }
+button { font: inherit; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+svg.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+section { padding: 80px 0; }
+section + section { border-top: 1px solid var(--line-soft); }
+
+/* Header */
+.site-head { border-bottom: 1px solid var(--line-soft); }
+.site-head .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
+.wordmark { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.site-nav { display: flex; gap: 24px; }
+.site-nav a, .signin { color: var(--ink); text-decoration: none; }
+.site-nav a:hover, .signin:hover { color: var(--brand); text-decoration: underline; }
+.signin { margin-left: auto; }
+
+/* Buttons: one solid button on the page */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; padding: 0 20px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink);
+  font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.btn:hover { background: var(--hover); border-color: #c3c9d1; color: var(--ink); }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #ffffff; }
+.btn-primary:hover { background: var(--brand-strong); border-color: var(--brand-strong); color: #ffffff; }
+
+/* Hero: left-aligned, product right under it */
+.hero { padding: 72px 0 64px; }
+.hero-text { max-width: 760px; }
+.hero h1 { margin-bottom: 20px; }
+.lead { font-size: 20px; line-height: 30px; color: var(--ink-soft); max-width: 680px; }
+.cta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 32px; }
+.cta-note { margin-top: 12px; font-size: 14px; line-height: 20px; color: var(--muted); }
+
+.product { margin: 56px 0 0; }
+.product-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); overflow: hidden; background: var(--surface); }
+.product-bar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+.product-bar strong { font-family: var(--font-display); font-weight: 600; }
+.product-bar span { font-size: 14px; color: var(--muted); }
+.product table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.product th { text-align: left; font-weight: 600; color: var(--muted); padding: 10px 20px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.product td { padding: 12px 20px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+.product tr:last-child td { border-bottom: 0; }
+.product .num { text-align: right; }
+.status { display: inline-flex; align-items: center; gap: 6px; }
+.status-overdue { color: var(--danger); font-weight: 600; }
+.status-due .icon { color: var(--warning); }
+.status-paid .icon { color: var(--success); }
+.status-sent .icon { color: var(--muted); }
+.product figcaption { margin-top: 12px; font-size: 14px; line-height: 20px; color: var(--muted); }
+
+/* What it does: heading left, plain list right */
+.split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 48px; }
+.facts { margin: 0; padding: 0; list-style: none; }
+.facts li { padding: 24px 0; border-top: 1px solid var(--line); }
+.facts li:first-child { padding-top: 0; border-top: 0; }
+.facts p { margin-top: 6px; color: var(--ink-soft); }
+
+/* Steps: a real sequence, so numbered */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin: 40px 0 0; padding: 0; list-style: none; counter-reset: step; }
+.steps li { counter-increment: step; }
+.steps li::before { content: "Step " counter(step); display: block; margin-bottom: 8px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.steps p { margin-top: 8px; color: var(--ink-soft); }
+
+/* Quote with its source */
+.quote { margin: 0; max-width: 760px; }
+.quote blockquote { margin: 0; font-size: 20px; line-height: 32px; }
+.quote figcaption { margin-top: 16px; color: var(--muted); }
+.quote cite { font-style: normal; color: var(--ink); font-weight: 600; }
+
+/* Pricing */
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 40px; max-width: 880px; }
+.plan { border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 24px; display: flex; flex-direction: column; }
+.price { margin: 12px 0 4px; font-family: var(--font-display); font-size: 32px; line-height: 40px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.price span { font-family: var(--font-body); font-size: 16px; font-weight: 400; color: var(--muted); }
+.plan ul { margin: 16px 0 24px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.plan li { display: flex; gap: 10px; align-items: flex-start; }
+.plan li .icon { margin-top: 5px; color: var(--success); }
+.plan .btn { margin-top: auto; align-self: flex-start; }
+.plans-note { margin-top: 16px; font-size: 14px; line-height: 20px; color: var(--muted); }
+
+.closing .wrap { display: flex; align-items: center; justify-content: space-between; gap: 24px 48px; flex-wrap: wrap; }
+.closing p { margin-top: 8px; color: var(--ink-soft); max-width: 600px; }
+
+.site-foot { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.site-foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px 32px; }
+.site-foot nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.site-foot a { color: var(--muted); }
+.site-foot a:hover { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .steps { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .site-nav { display: none; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  section { padding: 56px 0; }
+  .hero { padding: 40px 0 48px; }
+  h1 { font-size: 36px; line-height: 44px; }
+  h2 { font-size: 28px; line-height: 36px; }
+  .product { margin-top: 40px; }
+  .product th, .product td { padding-left: 12px; padding-right: 12px; }
+  .product .col-wide { display: none; }
+  .product td.customer { white-space: normal; }
+  .product-bar { padding: 12px; flex-direction: column; gap: 0; }
+  .plans { grid-template-columns: minmax(0, 1fr); }
+  .price { font-size: 28px; line-height: 36px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-paid" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9"/></symbol>
+  <symbol id="i-overdue" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-due" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-sent" viewBox="0 0 24 24"><path d="M21 3 10 14"/><path d="M21 3 14.5 21 10 14 3 9.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="wordmark" href="#">Remit</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="#what">Product</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#customers">Customers</a>
+      <a href="#">Help centre</a>
+    </nav>
+    <a class="signin" href="#">Sign in</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-text">
+        <h1>Send invoices, chase late payments and see who still owes you</h1>
+        <p class="lead">Remit sends your invoices, reminds customers on the schedule you choose and marks each invoice paid when the money reaches your bank. It is made for firms that send 20 to 500 invoices a month.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#">Start a 30-day trial</a>
+          <a href="#pricing">See pricing</a>
+        </div>
+        <p class="cta-note">No card needed for the trial.</p>
+      </div>
+
+      <figure class="product">
+        <div class="product-frame">
+          <div class="product-bar">
+            <strong>Invoices</strong>
+            <span>$6,860.00 overdue across 2 invoices</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th class="col-wide">Invoice</th>
+                <th class="col-wide">Due</th>
+                <th class="num">Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="customer">Harbor &amp; Pine Dental</td>
+                <td class="col-wide">INV-2041</td>
+                <td class="col-wide">16 Oct 2026</td>
+                <td class="num">$4,820.00</td>
+                <td><span class="status status-overdue"><svg class="icon"><use href="#i-overdue"/></svg>7 days overdue</span></td>
+              </tr>
+              <tr>
+                <td class="customer">Bluegate Veterinary</td>
+                <td class="col-wide">INV-2046</td>
+                <td class="col-wide">21 Oct 2026</td>
+                <td class="num">$2,040.00</td>
+                <td><span class="status status-overdue"><svg class="icon"><use href="#i-overdue"/></svg>2 days overdue</span></td>
+              </tr>
+              <tr>
+                <td class="customer">Okafor Structural Engineers</td>
+                <td class="col-wide">INV-2043</td>
+                <td class="col-wide">28 Oct 2026</td>
+                <td class="num">$12,400.00</td>
+                <td><span class="status status-due"><svg class="icon"><use href="#i-due"/></svg>Due in 5 days</span></td>
+              </tr>
+              <tr>
+                <td class="customer">Sato Family Pharmacy</td>
+                <td class="col-wide">INV-2044</td>
+                <td class="col-wide">3 Nov 2026</td>
+                <td class="num">$5,960.00</td>
+                <td><span class="status status-sent"><svg class="icon"><use href="#i-sent"/></svg>Sent</span></td>
+              </tr>
+              <tr>
+                <td class="customer">Tanaka &amp; Reyes LLP</td>
+                <td class="col-wide">INV-2045</td>
+                <td class="col-wide">20 Oct 2026</td>
+                <td class="num">$7,315.50</td>
+                <td><span class="status status-paid"><svg class="icon"><use href="#i-paid"/></svg>Paid 19 Oct</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>The invoice list, with overdue invoices at the top.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="wrap split">
+      <h2>What Remit does</h2>
+      <ul class="facts">
+        <li>
+          <h3>Invoices from your price list</h3>
+          <p>Pick the customer and the items. Tax rates, payment terms and the purchase order number fill in from the customer record.</p>
+        </li>
+        <li>
+          <h3>Reminders on your schedule</h3>
+          <p>A short email three days before the due date, another on the day, then every seven days until it is paid. You write the wording once and can switch reminders off for any customer.</p>
+        </li>
+        <li>
+          <h3>Payments matched to invoices</h3>
+          <p>Connect your bank feed and Remit marks invoices paid when the money arrives, including part payments. Anything it cannot match waits for you to confirm.</p>
+        </li>
+        <li>
+          <h3>One list of who owes what</h3>
+          <p>Unpaid invoices sorted by how late they are, with the contact name and phone number beside each amount.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Setting up takes an afternoon</h2>
+      <ol class="steps">
+        <li>
+          <h3>Import your customers</h3>
+          <p>Upload a CSV or connect your accounting software. Names, addresses, tax numbers and payment terms come across.</p>
+        </li>
+        <li>
+          <h3>Set your reminder schedule</h3>
+          <p>Choose when reminders go out and what they say. Customers with their own terms can have their own schedule.</p>
+        </li>
+        <li>
+          <h3>Connect your bank feed</h3>
+          <p>Remit reads incoming payments and matches them by amount and reference. You review the ones it is unsure of.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="customers">
+    <div class="wrap">
+      <figure class="quote">
+        <blockquote>We used to spend Monday mornings chasing late invoices by email. Now the reminders go out on their own, and I only phone the two or three customers who still have not paid.</blockquote>
+        <figcaption><cite>Priya Raman</cite>, practice manager at Raman and Cole Physiotherapy, Bristol</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <h2>Pricing</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Starter</h3>
+          <p class="price">$19 <span>per month</span></p>
+          <ul>
+            <li><svg class="icon"><use href="#i-check"/></svg>Up to 50 invoices a month</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>One user</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Email reminders</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>One bank feed</li>
+          </ul>
+          <a class="btn" href="#">Try Starter</a>
+        </div>
+        <div class="plan">
+          <h3>Practice</h3>
+          <p class="price">$49 <span>per month</span></p>
+          <ul>
+            <li><svg class="icon"><use href="#i-check"/></svg>Up to 500 invoices a month</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Five users</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Email and text message reminders</li>
+            <li><svg class="icon"><use href="#i-check"/></svg>Up to five bank feeds</li>
+          </ul>
+          <a class="btn" href="#">Try Practice</a>
+        </div>
+      </div>
+      <p class="plans-note">Prices exclude VAT. Both plans start with a 30-day trial.</p>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap">
+      <div>
+        <h2>Try Remit on your next invoice run</h2>
+        <p>Import last month's customers, send one invoice and read the reminders before your customers do.</p>
+      </div>
+      <a class="btn" href="#">Start a 30-day trial</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Remit Software Ltd, Leeds</span>
+    <nav aria-label="Footer">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">Service status</a>
+      <a href="#">Contact</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

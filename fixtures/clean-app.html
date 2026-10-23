@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remit invoices</title>
+<style>
+/* Remit, invoice list. The "what good looks like" counterpart of slop-app.html.
+   Neutral ground, one brand colour, borders instead of resting shadows,
+   four type sizes (12/14/16/20), status as text plus a shape. */
+:root {
+  --font-body: "Helvetica Neue", Helvetica, sans-serif;
+  --font-display: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+  --ink: #1c2024;
+  --muted: #5b6470;
+  --line: #d9dde3;
+  --line-soft: #e9ecf0;
+  --canvas: #f5f6f8;
+  --surface: #ffffff;
+  --hover: #eef0f3;
+  --brand: #1a5fb4;
+  --brand-strong: #154d93;
+  --brand-tint: #e8f0fa;
+  --danger: #b42318;
+  --warning: #8a5a00;
+  --success: #1e7a46;
+  --radius: 6px;
+  --radius-panel: 8px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+}
+h1, h2 { margin: 0; font-family: var(--font-display); font-weight: 600; text-wrap: balance; }
+h1 { font-size: 20px; line-height: 28px; }
+h2 { font-size: 16px; line-height: 24px; }
+p { margin: 0; }
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; color: inherit; }
+svg.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--line); }
+.sidebar-inner {
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 16px 12px;
+}
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; }
+.wordmark { font-family: var(--font-display); font-size: 20px; line-height: 28px; font-weight: 700; color: var(--ink); }
+.wordmark:hover { text-decoration: none; }
+.sidebar .menu-btn { display: none; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a {
+  display: flex; align-items: center; gap: 10px;
+  height: 40px; padding: 0 12px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  transition: background-color 120ms ease;
+}
+.nav a:hover { background: var(--hover); text-decoration: none; }
+.nav a[aria-current="page"] { background: var(--brand-tint); color: var(--brand); font-weight: 600; }
+.account { margin-top: auto; padding: 12px; border-top: 1px solid var(--line); }
+.account small { display: block; font-size: 12px; line-height: 16px; color: var(--muted); }
+
+main { padding: 24px 32px 48px; min-width: 0; max-width: 1240px; }
+
+/* Page header */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.page-head p { margin-top: 2px; color: var(--muted); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Buttons: one primary per area, everything else neutral */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink);
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.btn:hover { background: var(--hover); border-color: #c3c9d1; }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #ffffff; }
+.btn-primary:hover { background: var(--brand-strong); border-color: var(--brand-strong); }
+.btn[aria-disabled="true"] { color: var(--muted); background: var(--canvas); cursor: default; }
+.btn-icon { width: 40px; padding: 0; }
+
+/* Summary figures: type in a row, not tiles */
+.summary { display: flex; flex-wrap: wrap; gap: 12px 48px; margin: 20px 0 24px; padding: 0; }
+.summary div { min-width: 0; }
+.summary dt { color: var(--muted); }
+.summary dd { margin: 2px 0 0; font-size: 20px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.summary dd span { font-size: 14px; font-weight: 400; color: var(--muted); }
+
+/* Panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.panel + .panel { margin-top: 24px; }
+.panel-head { padding: 16px 16px 0; }
+
+/* List toolbar */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.search { position: relative; flex: 1 1 260px; max-width: 360px; }
+.search .icon { position: absolute; left: 12px; top: 12px; color: var(--muted); }
+.field-control {
+  width: 100%; height: 40px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface);
+}
+.field-control:hover { border-color: #c3c9d1; }
+.field-control::placeholder { color: var(--muted); opacity: 1; }
+.search .field-control { padding-left: 36px; }
+select.field-control {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 36px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235b6470' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.toolbar select.field-control { width: auto; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th {
+  padding: 10px 16px; text-align: left; white-space: nowrap;
+  font-size: 12px; line-height: 16px; font-weight: 600; color: var(--muted);
+  background: var(--canvas); border-bottom: 1px solid var(--line);
+}
+td { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: #fafbfc; }
+th.num, td.num { text-align: right; }
+.status { display: inline-flex; align-items: center; gap: 6px; }
+.status-overdue { color: var(--danger); font-weight: 600; }
+.status-due .icon { color: var(--warning); }
+.status-paid .icon { color: var(--success); }
+.status-partial .icon, .status-draft .icon, .status-sent .icon { color: var(--muted); }
+
+.paging { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+.paging div { display: flex; gap: 8px; }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; padding: 16px; max-width: 760px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, .field .label { font-weight: 600; }
+.hint { font-size: 12px; line-height: 16px; color: var(--muted); }
+.checks { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; border: 0; margin: 0; padding: 0; }
+.checks legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
+.check { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand); }
+.form-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px; border-top: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* Narrow laptop and phone */
+@media (max-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+  .sidebar-inner { position: static; height: auto; padding: 8px 16px; }
+  .sidebar-top { padding: 0; }
+  .sidebar .menu-btn { display: inline-flex; }
+  .nav, .account { display: none; }
+  main { padding: 20px 16px 40px; }
+}
+@media (max-width: 640px) {
+  .col-invoice, .col-issued, .col-po, .col-due { display: none; }
+  td.col-customer { white-space: normal; }
+  th, td { padding-left: 12px; padding-right: 12px; }
+  .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .search { max-width: none; flex-basis: 100%; }
+  .toolbar select.field-control { flex: 1 1 0; min-width: 0; }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-overview" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></symbol>
+  <symbol id="i-invoice" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-customers" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></symbol>
+  <symbol id="i-payments" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6.5 15h4"/></symbol>
+  <symbol id="i-reports" viewBox="0 0 24 24"><path d="M3 20h18M6 16v-5M11 16V6M16 16v-8"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-paid" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9"/></symbol>
+  <symbol id="i-overdue" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-due" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-partial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+  <symbol id="i-draft" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3.5 3"/></symbol>
+  <symbol id="i-sent" viewBox="0 0 24 24"><path d="M21 3 10 14"/><path d="M21 3 14.5 21 10 14 3 9.5z"/></symbol>
+</svg>
+
+<div class="layout">
+  <aside class="sidebar">
+   <div class="sidebar-inner">
+    <div class="sidebar-top">
+      <a class="wordmark" href="#">Remit</a>
+      <button class="btn btn-icon menu-btn" type="button" aria-label="Open menu"><svg class="icon"><use href="#i-menu"/></svg></button>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="#"><svg class="icon"><use href="#i-overview"/></svg>Overview</a>
+      <a href="#" aria-current="page"><svg class="icon"><use href="#i-invoice"/></svg>Invoices</a>
+      <a href="#"><svg class="icon"><use href="#i-customers"/></svg>Customers</a>
+      <a href="#"><svg class="icon"><use href="#i-payments"/></svg>Payments</a>
+      <a href="#"><svg class="icon"><use href="#i-reports"/></svg>Reports</a>
+      <a href="#"><svg class="icon"><use href="#i-settings"/></svg>Settings</a>
+    </nav>
+    <div class="account">
+      Dana Whitfield
+      <small>Whitfield Accounting</small>
+    </div>
+   </div>
+  </aside>
+
+  <main>
+    <header class="page-head">
+      <div>
+        <h1>Invoices</h1>
+        <p>48 invoices, 7 unpaid</p>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
+        <button class="btn btn-primary" type="button"><svg class="icon"><use href="#i-plus"/></svg>Create invoice</button>
+      </div>
+    </header>
+
+    <dl class="summary">
+      <div><dt>Outstanding</dt><dd>$48,215.40</dd></div>
+      <div><dt>Overdue</dt><dd>$6,860.00 <span>2 invoices</span></dd></div>
+      <div><dt>Paid in October</dt><dd>$31,604.50</dd></div>
+      <div><dt>Average time to pay</dt><dd>18 days</dd></div>
+    </dl>
+
+    <section class="panel" aria-label="Invoice list">
+      <div class="toolbar">
+        <label class="search">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input class="field-control" type="search" placeholder="Customer or invoice number" aria-label="Search invoices">
+        </label>
+        <select class="field-control" aria-label="Status">
+          <option>All statuses</option>
+          <option>Unpaid</option>
+          <option>Overdue</option>
+          <option>Paid</option>
+          <option>Draft</option>
+        </select>
+        <select class="field-control" aria-label="Sort order">
+          <option>Overdue first</option>
+          <option>Newest first</option>
+          <option>Largest amount first</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-invoice" scope="col">Invoice</th>
+              <th class="col-customer" scope="col">Customer</th>
+              <th class="col-issued" scope="col">Issued</th>
+              <th class="col-due" scope="col">Due</th>
+              <th class="num" scope="col">Amount</th>
+              <th scope="col">Status</th>
+              <th class="col-po" scope="col">PO number</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2041</a></td>
+              <td class="col-customer">Harbor &amp; Pine Dental</td>
+              <td class="col-issued">2 Oct 2026</td>
+              <td class="col-due">16 Oct 2026</td>
+              <td class="num">$4,820.00</td>
+              <td><span class="status status-overdue"><svg class="icon"><use href="#i-overdue"/></svg>7 days overdue</span></td>
+              <td class="col-po">4471</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2046</a></td>
+              <td class="col-customer">Bluegate Veterinary</td>
+              <td class="col-issued">7 Oct 2026</td>
+              <td class="col-due">21 Oct 2026</td>
+              <td class="num">$2,040.00</td>
+              <td><span class="status status-overdue"><svg class="icon"><use href="#i-overdue"/></svg>2 days overdue</span></td>
+              <td class="col-po muted">Not provided</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2047</a></td>
+              <td class="col-customer">Marlow Cycle Works</td>
+              <td class="col-issued">9 Oct 2026</td>
+              <td class="col-due">23 Oct 2026</td>
+              <td class="num">$3,180.00</td>
+              <td><span class="status status-partial"><svg class="icon"><use href="#i-partial"/></svg>$1,180.00 left</span></td>
+              <td class="col-po muted">Not provided</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2043</a></td>
+              <td class="col-customer">Okafor Structural Engineers</td>
+              <td class="col-issued">5 Oct 2026</td>
+              <td class="col-due">28 Oct 2026</td>
+              <td class="num">$12,400.00</td>
+              <td><span class="status status-due"><svg class="icon"><use href="#i-due"/></svg>Due in 5 days</span></td>
+              <td class="col-po">OSE-1180</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2044</a></td>
+              <td class="col-customer">Sato Family Pharmacy</td>
+              <td class="col-issued">6 Oct 2026</td>
+              <td class="col-due">3 Nov 2026</td>
+              <td class="num">$5,960.00</td>
+              <td><span class="status status-sent"><svg class="icon"><use href="#i-sent"/></svg>Sent</span></td>
+              <td class="col-po">0092</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2048</a></td>
+              <td class="col-customer">Lindqvist Photography</td>
+              <td class="col-issued">22 Oct 2026</td>
+              <td class="col-due muted">Set when sent</td>
+              <td class="num">$860.00</td>
+              <td><span class="status status-draft"><svg class="icon"><use href="#i-draft"/></svg>Draft</span></td>
+              <td class="col-po muted">Not provided</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2045</a></td>
+              <td class="col-customer">Tanaka &amp; Reyes LLP</td>
+              <td class="col-issued">6 Oct 2026</td>
+              <td class="col-due">20 Oct 2026</td>
+              <td class="num">$7,315.50</td>
+              <td><span class="status status-paid"><svg class="icon"><use href="#i-paid"/></svg>Paid 19 Oct</span></td>
+              <td class="col-po">TR-2026-118</td>
+            </tr>
+            <tr>
+              <td class="col-invoice"><a href="#">INV-2042</a></td>
+              <td class="col-customer">Kettle Street Bakery</td>
+              <td class="col-issued">3 Oct 2026</td>
+              <td class="col-due">17 Oct 2026</td>
+              <td class="num">$1,250.00</td>
+              <td><span class="status status-paid"><svg class="icon"><use href="#i-paid"/></svg>Paid 15 Oct</span></td>
+              <td class="col-po muted">Not provided</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="paging">
+        <span>1–8 of 48</span>
+        <div>
+          <button class="btn" type="button" aria-disabled="true">Previous</button>
+          <button class="btn" type="button">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="reminders-title">
+      <div class="panel-head"><h2 id="reminders-title">Payment reminders</h2></div>
+      <form class="form-grid" onsubmit="return false">
+        <div class="field">
+          <label for="first">First reminder</label>
+          <select class="field-control" id="first">
+            <option>On the due date</option>
+            <option selected>3 days before the due date</option>
+            <option>7 days before the due date</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="repeat">After the due date</label>
+          <select class="field-control" id="repeat">
+            <option>Every 3 days</option>
+            <option selected>Every 7 days</option>
+            <option>Every 14 days</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="stop">Stop after</label>
+          <select class="field-control" id="stop">
+            <option>2 reminders</option>
+            <option selected>4 reminders</option>
+            <option>6 reminders</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="reply">Reply-to address</label>
+          <input class="field-control" id="reply" type="email" value="accounts@whitfieldaccounting.co.uk" aria-describedby="reply-hint">
+          <span class="hint" id="reply-hint">Customer replies go to this address.</span>
+        </div>
+        <fieldset class="checks">
+          <legend>Each reminder</legend>
+          <label class="check"><input type="checkbox" checked>Attach the invoice PDF</label>
+          <label class="check"><input type="checkbox">Send me a copy</label>
+        </fieldset>
+      </form>
+      <div class="form-foot">
+        <button class="btn" type="button">Save reminders</button>
+        <span class="muted">Last saved 21 Oct 2026 by Dana Whitfield</span>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

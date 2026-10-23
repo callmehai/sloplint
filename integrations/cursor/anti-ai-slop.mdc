@@ -1,0 +1,25 @@
+---
+description: Avoid UI patterns that make a web front-end look AI-generated (gradients, card kits, eyebrows, glow, buzzword copy). Use when building, restyling or reviewing any screen, component or landing page.
+globs: **/*.css, **/*.scss, **/*.html, **/*.jsx, **/*.tsx, **/*.vue, **/*.svelte
+alwaysApply: false
+---
+
+# anti-ai-slop
+
+Before writing or reviewing UI code, read the skill and follow it:
+
+@skills/anti-ai-slop/SKILL.md
+
+The path assumes this kit sits at the repository root. If you vendored it elsewhere, fix the path
+above.
+
+In short:
+
+- The tell list, with a fix for each, is `skills/anti-ai-slop/tells.json` (details in
+  `references/tells.md`). Check new UI against it before showing it.
+- Fixes follow the shared design-system baseline in `references/design-systems.md`; copy follows
+  `references/copy.md`.
+- The project's own tokens and its `.slop.json` exceptions win over the generic rules. Do not
+  "fix" a pattern that `.slop.json` allows.
+- Removing tells is not the goal on its own. Replace each one with the plain, product-specific
+  choice: real data, the brand's colour, one primary action, words that say what happens.

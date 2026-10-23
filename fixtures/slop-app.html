@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remit AI Dashboard</title>
+<style>
+/* Deliberately sloppy. Every tell is marked with data-tell on the element that shows it.
+   Do not "fix" anything here: the tests depend on each instance staying put. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  display: flex;
+  min-height: 100vh;
+}
+button, input, select, textarea { font-family: inherit; }
+input:focus, select:focus, textarea:focus, button:focus { outline: none; }
+
+/* Sidebar: decorative gradient (C1) */
+.sidebar {
+  width: 272px; flex: none;
+  background: linear-gradient(180deg, #4f46e5 0%, #7c3aed 55%, #c026d3 100%);
+  color: #fff;
+  padding: 24px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 100vh;
+  position: sticky; top: 0; height: 100vh;
+}
+.logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; padding: 0 8px 20px; }
+.logo .pro { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; background: rgba(255,255,255,.2); padding: 3px 8px; border-radius: 9999px; }
+.nav-label { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.6); padding: 16px 12px 6px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 16px; color: rgba(255,255,255,.88); font-size: 15px; font-weight: 500; text-decoration: none; transition: all .3s ease; }
+.nav-item:hover { background: rgba(255,255,255,.12); transform: translateX(4px); }
+.nav-item.active { background: rgba(255,255,255,.22); color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.nav-item .count { margin-left: auto; font-size: 11px; background: #f43f5e; color: #fff; border-radius: 9999px; padding: 1px 8px; }
+.upgrade {
+  margin-top: auto;
+  background: rgba(255,255,255,.14);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 16px; padding: 18px;
+}
+.upgrade h4 { font-size: 16px; margin-bottom: 6px; }
+.upgrade p { font-size: 13px; color: rgba(255,255,255,.8); line-height: 1.5; margin-bottom: 14px; }
+.upgrade button { width: 100%; border: 0; border-radius: 16px; padding: 10px; background: #fff; color: #6d28d9; font-weight: 700; font-size: 14px; cursor: pointer; transition: all .3s ease; }
+.upgrade button:hover { transform: scale(1.05); }
+
+/* Main */
+.main { flex: 1; min-width: 0; }
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 32px;
+  background: rgba(255,255,255,.6);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226,232,240,.7);
+}
+.search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 10px; background: #f1f5f9; border-radius: 16px; padding: 10px 16px; color: #94a3b8; font-size: 14px; }
+.search kbd { margin-left: auto; font-family: inherit; font-size: 11px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1px 6px; }
+.top-icons { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+.bell { position: relative; font-size: 18px; }
+.bell .ping { position: absolute; top: -2px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: #f43f5e; animation: ping 1.4s cubic-bezier(0,0,.2,1) infinite; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+
+.content { padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+.welcome {
+  border-radius: 16px; padding: 28px 32px; color: #fff;
+  background: linear-gradient(120deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
+  box-shadow: 0 20px 40px -12px rgba(139, 92, 246, .45);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.welcome h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.welcome p { font-size: 15px; opacity: .9; }
+.welcome .art { font-size: 48px; }
+
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.grad-title {
+  font-size: 30px; font-weight: 800; letter-spacing: -.02em;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.subtitle { font-size: 15px; color: #64748b; margin-top: 4px; max-width: 560px; }
+.head-actions { display: flex; gap: 10px; }
+.btn { border: 0; border-radius: 16px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .3s ease; color: #fff; }
+.btn:hover { transform: translateY(-2px) scale(1.03); }
+.btn-indigo { background: #6366f1; }
+.btn-pink { background: #db2777; }
+.btn-glow { background: #7c3aed; box-shadow: 0 0 30px rgba(139, 92, 246, .6); }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.kpi {
+  background: #fff; border-radius: 16px; padding: 20px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .15);
+  transition: all .3s ease;
+}
+.kpi:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(15,23,42,.25); }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.tile { width: 44px; height: 44px; border-radius: 16px; display: grid; place-items: center; color: #fff; }
+.tile svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.t-violet { background: #8b5cf6; } .t-pink { background: #ec4899; } .t-amber { background: #f59e0b; } .t-emerald { background: #10b981; } .t-sky { background: #0ea5e9; }
+.trend { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 9999px; }
+.trend.up { background: #dcfce7; color: #15803d; } .trend.down { background: #fee2e2; color: #b91c1c; }
+.kpi-label { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.kpi-value { font-size: 28px; font-weight: 800; }
+.v-violet { color: #7c3aed; } .v-pink { color: #db2777; } .v-amber { color: #d97706; } .v-emerald { color: #059669; }
+.kpi-caption { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+.spark { display: block; width: 100%; height: 36px; margin-top: 12px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.card { background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .15); transition: all .3s ease; }
+.card:hover { transform: translateY(-4px); }
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.card-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.card-title .tile { width: 36px; height: 36px; border-radius: 14px; }
+.card-title .tile svg { width: 18px; height: 18px; }
+.meta { font-size: 11px; color: #94a3b8; margin-top: 2px; font-weight: 500; }
+.link { font-size: 13px; font-weight: 600; color: #6366f1; text-decoration: none; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+td { font-size: 14px; padding: 13px 12px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+.who { display: flex; align-items: center; gap: 10px; }
+.who .av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; }
+.who b { display: block; font-size: 14px; font-weight: 600; }
+.who small { display: block; font-size: 12px; color: #9ca3af; }
+.amount { font-weight: 700; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; }
+.pill-green { background: #dcfce7; color: #15803d; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 2s ease-in-out infinite; }
+.chip-square { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #4338ca; }
+.dash { color: #94a3b8; }
+
+/* Right column */
+.stack { display: flex; flex-direction: column; gap: 24px; }
+.activity { border: 1px solid #e2e8f0; box-shadow: none; }
+.act-item { border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; margin-top: 12px; }
+.act-item p { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.act-meta { border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px 14px; font-size: 12px; color: #64748b; background: #f8fafc; }
+.act-meta strong { display: block; font-size: 14px; color: #0f172a; margin-bottom: 2px; }
+.alert { background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 16px; padding: 16px 18px; }
+.alert h4 { font-size: 16px; color: #92400e; margin-bottom: 4px; }
+.alert p { font-size: 13px; color: #b45309; }
+.insights { border: 1px solid #e2e8f0; box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .2); }
+.insights p { font-size: 15px; color: #475569; line-height: 1.6; margin: 12px 0 14px; }
+.ai-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 4px 10px; border-radius: 9999px; }
+.ai-chip svg { width: 13px; height: 13px; fill: currentColor; }
+
+/* Form */
+.form-card label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .1em; margin: 14px 0 6px; }
+.form-card input, .form-card select { width: 100%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 11px 14px; font-size: 14px; background: #f8fafc; transition: all .3s ease; }
+.form-card input:focus { border-color: #a5b4fc; box-shadow: 0 0 0 4px rgba(99,102,241,.2); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 14px; font-weight: 500; }
+.toggle { width: 44px; height: 24px; border-radius: 9999px; background: linear-gradient(90deg, #6366f1, #a855f7); position: relative; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 23px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+.btn-submit { width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 16px; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; background: linear-gradient(90deg, #6366f1, #8b5cf6); box-shadow: 0 10px 25px -5px rgba(99,102,241,.5); transition: all .3s ease; }
+.btn-submit:hover { transform: translateY(-2px); }
+.fine { font-size: 10px; color: #9ca3af; text-align: center; margin-top: 10px; }
+
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 50; background: #0f172a; color: #fff; padding: 14px 18px; border-radius: 16px; font-size: 14px; font-weight: 500; box-shadow: 0 20px 40px -10px rgba(0,0,0,.4); display: flex; align-items: center; gap: 10px; }
+.sizes { font-size: 17px; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(1.35); } }
+@keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #059669; }
+.shimmer-text { background: linear-gradient(90deg, #6366f1 0%, #ec4899 25%, #6366f1 50%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 3s linear infinite; }
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .sidebar { display: none; }
+  .topbar { padding: 12px 16px; }
+  .content { padding: 20px 16px 40px; }
+  .welcome .art { display: none; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .card { overflow-x: auto; }
+  .head-actions { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body data-tell="T1 T6 S1 M5">
+<aside class="sidebar" data-tell="C1">
+  <div class="logo"><span data-tell="L8">⚡</span> Remit AI <span class="pro" data-tell="T3 T7">Pro</span></div>
+  <div class="nav-label" data-tell="T3 T7">Main menu</div>
+  <a class="nav-item active" href="#"><span data-tell="L8">🏠</span> Dashboard</a>
+  <a class="nav-item" href="#" data-tell="M3"><span>📄</span> Invoices <span class="count">12</span></a>
+  <a class="nav-item" href="#"><span>👥</span> Customers</a>
+  <a class="nav-item" href="#"><span>💳</span> Payments</a>
+  <a class="nav-item" href="#"><span>📊</span> Analytics</a>
+  <div class="nav-label">Workspace</div>
+  <a class="nav-item" href="#"><span>⚙️</span> Settings</a>
+  <div class="upgrade" data-tell="S7">
+    <h4>✨ Upgrade to Pro</h4>
+    <p>Unlock powerful AI insights and supercharge your cash flow.</p>
+    <button type="button" data-tell="M2">Upgrade now 🚀</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar" data-tell="S7">
+    <div class="search">🔍 Search anything... <kbd>⌘K</kbd></div>
+    <div class="top-icons">
+      <span class="live"><span class="dot" data-tell="M1 L9"></span>Live</span>
+      <span class="bell">🔔<span class="ping" data-tell="M1"></span></span>
+      <span class="avatar" data-tell="C1">JD</span>
+    </div>
+  </header>
+
+  <div class="content">
+    <section class="welcome" data-tell="C1 L8 W4 W5 S6" data-tell-manual="L14">
+      <div>
+        <h2>👋 Welcome back, John Doe!</h2>
+        <p>Your AI assistant has been busy. Here's what's happening with your invoices today!</p>
+      </div>
+      <div class="art">🚀</div>
+    </section>
+
+    <div class="page-head">
+      <div>
+        <h1 class="grad-title" data-tell="C2">Dashboard</h1>
+        <p class="subtitle" data-tell="W3">Here you can view and manage all your invoices, customers and payments in one place.</p>
+      </div>
+      <div class="head-actions" data-tell="L13">
+        <button class="btn btn-indigo" type="button" data-tell="C3">+ Create Invoice</button>
+        <button class="btn btn-pink" type="button">Export</button>
+        <button class="btn btn-glow" type="button" data-tell="S6">✨ AI Forecast</button>
+      </div>
+    </div>
+
+    <section class="kpis" data-tell="L1 C4">
+      <div class="kpi" data-tell="S4 M2 M3">
+        <div class="kpi-top"><span class="tile t-violet" data-tell="L2"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="trend up">+12.5%</span></div>
+        <div class="kpi-label" data-tell="T3">Total Revenue</div>
+        <div class="kpi-value v-violet">$48,215</div>
+        <div class="kpi-caption" data-tell="A1">vs last month</div>
+        <svg class="spark" viewBox="0 0 200 36" preserveAspectRatio="none" data-tell-manual="L15"><polyline fill="none" stroke="#8b5cf6" stroke-width="2.5" points="0,30 25,24 50,27 75,15 100,19 125,9 150,13 175,5 200,8"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="tile t-pink"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span><span class="trend down">-3.2%</span></div>
+        <div class="kpi-label">Overdue</div>
+        <div class="kpi-value v-pink">$6,860</div>
+        <div class="kpi-caption">vs last month</div>
+        <svg class="spark" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="#ec4899" stroke-width="2.5" points="0,10 25,14 50,9 75,20 100,16 125,24 150,18 175,26 200,22"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="tile t-amber"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="trend up">+8.1%</span></div>
+        <div class="kpi-label">Avg. Days to Pay</div>
+        <div class="kpi-value v-amber">18</div>
+        <div class="kpi-caption">vs last month</div>
+        <svg class="spark" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="#f59e0b" stroke-width="2.5" points="0,20 25,22 50,15 75,18 100,12 125,16 150,10 175,14 200,9"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="tile t-emerald"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span class="trend up">+24%</span></div>
+        <div class="kpi-label">Paid This Month</div>
+        <div class="kpi-value v-emerald">$31,604</div>
+        <div class="kpi-caption">vs last month</div>
+        <svg class="spark" viewBox="0 0 200 36" preserveAspectRatio="none"><polyline fill="none" stroke="#10b981" stroke-width="2.5" points="0,32 25,28 50,29 75,20 100,22 125,14 150,12 175,8 200,4"/></svg>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card" data-tell="S4">
+        <div class="card-head">
+          <div>
+            <div class="card-title"><span class="tile t-sky" data-tell="L2"><svg viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></span>Recent Invoices</div>
+            <div class="meta" data-tell="L11 T7">Updated 2m ago · 48 invoices · Auto-sync on</div>
+          </div>
+          <a class="link" href="#" data-tell="L11">View all →</a>
+        </div>
+        <table data-tell-manual="A3" data-tell="S2">
+          <thead>
+            <tr><th data-tell="T3 T7">Customer</th><th>Invoice</th><th>Amount</th><th>Status</th><th>Type</th><th>PO</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#8b5cf6">JD</span><div><b data-tell="W5">John Doe</b><small>john@example.com</small></div></div></td>
+              <td>INV-2041</td><td class="amount">$4,820.00</td>
+              <td data-tell="L10"><span class="pill pill-green" data-tell="L9"><span class="dot" data-tell="M1"></span>Active</span></td>
+              <td><span class="chip-square">Recurring</span></td>
+              <td class="dash" data-tell="L12">N/A</td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#ec4899">JS</span><div><b>Jane Smith</b><small>jane@example.com</small></div></div></td>
+              <td>INV-2046</td><td class="amount">$2,040.00</td>
+              <td><span class="pill pill-green"><span class="dot"></span>Active</span></td>
+              <td><span class="chip-square">One-off</span></td>
+              <td class="dash">—</td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#f59e0b">AI</span><div><b data-tell="W5">Acme Inc</b><small>billing@acme.com</small></div></div></td>
+              <td>INV-2047</td><td class="amount">$3,180.00</td>
+              <td><span class="pill pill-green"><span class="dot"></span>Active</span></td>
+              <td><span class="chip-square">Recurring</span></td>
+              <td>4471</td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#10b981">OS</span><div><b>Okafor Structural</b><small>ap@okafor.com</small></div></div></td>
+              <td>INV-2043</td><td class="amount">$12,400.00</td>
+              <td><span class="pill pill-green"><span class="dot"></span>Active</span></td>
+              <td><span class="chip-square">One-off</span></td>
+              <td class="dash">—</td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#0ea5e9">SF</span><div><b>Sato Family Pharmacy</b><small>hello@sato.com</small></div></div></td>
+              <td>INV-2044</td><td class="amount">$5,960.00</td>
+              <td><span class="pill pill-green"><span class="dot"></span>Active</span></td>
+              <td><span class="chip-square">Recurring</span></td>
+              <td class="dash">N/A</td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="av" style="background:#6366f1">TR</span><div><b>Tanaka &amp; Reyes</b><small>accounts@tanaka.com</small></div></div></td>
+              <td>INV-2045</td><td class="amount">$7,315.50</td>
+              <td><span class="pill pill-green"><span class="dot"></span>Active</span></td>
+              <td><span class="chip-square">One-off</span></td>
+              <td>TR-118</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div class="stack">
+        <section class="card activity" data-tell="S8">
+          <div class="card-title">⚡ Recent Activity</div>
+          <div class="act-item">
+            <p>Payment received from Tanaka &amp; Reyes 🎉</p>
+            <div class="act-meta"><strong>INV-2045 · $7,315.50</strong>2 hours ago · Bank sync · Auto-matched</div>
+          </div>
+          <div class="act-item">
+            <p>Reminder sent to John Doe</p>
+            <div class="act-meta"><strong>INV-2041 · $4,820.00</strong>5 hours ago · Email · AI-generated</div>
+          </div>
+        </section>
+
+        <div class="alert" data-tell="S3 W4">
+          <h4>⚠️ Heads up!</h4>
+          <p>3 invoices are overdue. Take action now to keep your cash flow healthy!</p>
+        </div>
+
+        <section class="card insights" data-tell="S5 W1">
+          <div class="card-head"><div class="card-title">AI Insights</div><span class="ai-chip" data-tell="L3"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>AI Powered</span></div>
+          <p>Unlock seamless cash-flow forecasting. Our cutting-edge AI analyzes your data to supercharge collections and elevate your financial workflow.</p>
+          <a class="link" href="#" data-tell="W2">Learn more</a>
+        </section>
+
+        <section class="card form-card">
+          <div class="card-title"><span class="tile t-violet"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Quick Invoice</div>
+          <label for="q-client">Client name</label>
+          <input id="q-client" placeholder="John Doe">
+          <label for="q-desc">Description</label>
+          <input id="q-desc" value="Lorem ipsum dolor sit amet" data-tell="W5">
+          <label for="q-amount">Amount</label>
+          <input id="q-amount" placeholder="$0.00">
+          <div class="toggle-row sizes"><span>Enable AI magic ✨</span><span class="toggle"></span></div>
+          <button class="btn-submit" type="button" data-tell="W2 C1">Submit</button>
+          <p class="fine" data-tell="T7 A1">By submitting you agree to our Terms · Privacy</p>
+        </section>
+      </div>
+    </div>
+    <p class="shimmer-text" style="font-size:19px;font-weight:700" data-tell="C2 M1">Powered by next-gen AI</p>
+  </div>
+</div>
+
+<div class="toast" data-tell="L8 W4" data-tell-manual="A4">🎉 Invoice saved successfully!</div>
+</body>
+</html>

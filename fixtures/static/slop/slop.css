@@ -1,0 +1,156 @@
+/* Static-scanner fixture: CSS that a generator typically emits.
+   Contract: each `tell: ID` comment marks the rule or declaration on the lines right below it.
+   Several ids in one comment are space-separated. Do not tidy this file. */
+
+/* tell: C6 */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --border: 214.3 31.8% 91.4%;
+  --radius: 0.75rem;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  /* tell: C6 */
+  color: #0f172a;
+  /* tell: C6 */
+  background: #f8fafc;
+}
+
+/* tell: C1 */
+.hero {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+}
+
+/* tell: C1 */
+.sidebar { background-image: linear-gradient(180deg, #4f46e5, #7c3aed); }
+
+/* tell: C2 */
+.gradient-text {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* tell: C3 */
+.btn-primary { background: #6366f1; color: #fff; }
+
+/* tell: C3 */
+.btn-primary:hover { background-color: #8b5cf6; }
+
+/* tell: T3 */
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/* tell: T3 */
+th { text-transform: uppercase; letter-spacing: .1em; font-size: 11px; }
+
+/* tell: S3 */
+.callout { border-left: 4px solid #8b5cf6; padding: 16px 20px; border-radius: 12px; }
+
+/* tell: S3 */
+.alert-warning { border-left-width: 4px; border-left-style: solid; border-left-color: #f59e0b; }
+
+/* tell: S6 */
+.btn-glow { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
+
+/* tell: S6 */
+.neon { text-shadow: 0 0 12px #22d3ee, 0 0 24px #22d3ee; }
+
+/* tell: S6 */
+.screenshot { box-shadow: 0 40px 120px -20px rgba(99, 102, 241, 0.5); }
+
+/* tell: S7 */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* tell: S9 */
+.blob {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+  filter: blur(80px);
+  opacity: 0.6;
+}
+
+/* tell: S9 */
+.aurora { background: conic-gradient(from 180deg at 50% 50%, #6366f1, #ec4899, #22d3ee, #6366f1); filter: blur(100px); }
+
+/* tell: L8 */
+.feature-title::before { content: "🚀 "; }
+
+/* tell: L8 */
+.ai-label::before { content: "✨"; margin-right: 4px; }
+
+/* tell: L11 */
+.meta > * + *::before { content: " · "; color: #94a3b8; }
+
+/* tell: L11 */
+.link-more::after { content: " →"; }
+
+/* tell: M5 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+/* tell: M1 */
+.status-dot { animation: pulse 2s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* tell: M1 */
+.blob { animation: float 8s ease-in-out infinite; }
+
+/* tell: M1 */
+.cta { animation-name: pulse; animation-duration: 2.2s; animation-iteration-count: infinite; }
+
+/* tell: M2 */
+.card:hover { transform: translateY(-4px); }
+
+/* tell: M2 */
+.btn:hover { transform: scale(1.05); }
+
+/* tell: M3 */
+.card { transition: all 0.3s ease; }
+
+/* tell: M3 */
+.btn { transition: all .2s ease-in-out; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* tell: M4 */
+.fade-up { animation: fadeUp 0.8s ease both; }
+
+/* tell: M4 */
+[data-aos="fade-up"] { opacity: 0; transform: translateY(32px); }
+
+/* tell: A2 */
+input:focus { outline: none; }
+
+/* tell: A2 */
+button:focus { outline: 0; }
+
+/* tell: A2 */
+*:focus { outline-style: none; }
