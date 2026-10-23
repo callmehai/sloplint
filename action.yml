@@ -1,0 +1,128 @@
+name: sloplint diff
+description: Scan the same screens on two builds, box every visible change, and comment the result on the pull request.
+branding:
+  icon: eye
+  color: blue
+
+inputs:
+  before:
+    description: Base URL of the build without the change (e.g. http://localhost:4173), or a directory of HTML files.
+    required: true
+  after:
+    description: Base URL of the build with the change, or a directory of HTML files.
+    required: true
+  paths:
+    description: Paths to scan on both builds, one per line (e.g. "/", "/settings?tab=team").
+    required: false
+    default: /
+  viewports:
+    description: Comma-separated viewport widths.
+    required: false
+    default: 1440,390
+  scope:
+    description: app, landing or both.
+    required: false
+    default: both
+  config:
+    description: Path to the project's .slop.json (exceptions and scope).
+    required: false
+    default: .slop.json
+  setup:
+    description: Path to a module run before each page loads (sign in, seed storage). See the README.
+    required: false
+    default: ''
+  wait:
+    description: Milliseconds to wait after the page loads.
+    required: false
+    default: '600'
+  comment:
+    description: Post (or update) a comment with the summary on the pull request.
+    required: false
+    default: 'true'
+  fail-on-new:
+    description: Fail the job when the change adds a tell that the base build does not have.
+    required: false
+    default: 'true'
+  github-token:
+    description: Token used to comment. Needs pull-requests write.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  new-tells:
+    description: Tells present after the change and not before, space separated.
+    value: ${{ steps.diff.outputs.new-tells }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Install sloplint and Chromium
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --omit=dev --no-audit --no-fund
+        npx playwright install --with-deps chromium
+
+    - name: Scan both builds
+      shell: bash
+      env:
+        BEFORE: ${{ inputs.before }}
+        AFTER: ${{ inputs.after }}
+        PATHS: ${{ inputs.paths }}
+        CLI: ${{ github.action_path }}/skills/sloplint/checker/cli.mjs
+        OUT: ${{ runner.temp }}/sloplint
+      run: |
+        # A base that is not a URL is a directory of files; resolve paths against it.
+        url() { case "$1" in http*://*) printf '%s%s' "${1%/}" "$2" ;; *) printf '%s/%s' "${1%/}" "${2#/}" ;; esac; }
+        mapfile -t list < <(printf '%s\n' "$PATHS" | sed '/^[[:space:]]*$/d')
+        b=(); a=()
+        for p in "${list[@]}"; do b+=("$(url "$BEFORE" "$p")"); a+=("$(url "$AFTER" "$p")"); done
+        opts=(--viewports "${{ inputs.viewports }}" --scope "${{ inputs.scope }}" --config "${{ inputs.config }}" --wait "${{ inputs.wait }}")
+        [ -n "${{ inputs.setup }}" ] && opts+=(--setup "${{ inputs.setup }}")
+        # scan exits 1 when a page reads as slop; the diff below decides the job's result.
+        node "$CLI" scan "${b[@]}" "${opts[@]}" --out "$OUT/before" || [ $? -eq 1 ]
+        node "$CLI" scan "${a[@]}" "${opts[@]}" --out "$OUT/after" || [ $? -eq 1 ]
+
+    - name: Diff
+      id: diff
+      shell: bash
+      env:
+        CLI: ${{ github.action_path }}/skills/sloplint/checker/cli.mjs
+        OUT: ${{ runner.temp }}/sloplint
+      run: |
+        node "$CLI" diff "$OUT/before" "$OUT/after" --out "$OUT/diff" --by order
+        cat "$OUT/diff/diff.md" >> "$GITHUB_STEP_SUMMARY"
+        echo "new-tells=$(node -e "const d=require(process.argv[1]);console.log([...new Set(d.pages.flatMap((p)=>p.new??[]))].join(' '))" "$OUT/diff/diff.json")" >> "$GITHUB_OUTPUT"
+
+    - name: Upload the report
+      uses: actions/upload-artifact@v4
+      with:
+        name: sloplint
+        path: ${{ runner.temp }}/sloplint
+
+    - name: Comment on the pull request
+      if: inputs.comment == 'true' && github.event.pull_request
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        OUT: ${{ runner.temp }}/sloplint
+      run: |
+        # One comment per pull request, updated on every push, found by its marker.
+        { echo '<!-- sloplint-diff -->'; cat "$OUT/diff/diff.md"; echo; echo "[Run and \`sloplint\` artifact]($RUN)"; } > "$OUT/comment.md"
+        id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.body | startswith("<!-- sloplint-diff -->")) | .id' | head -1)
+        if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$OUT/comment.md" > /dev/null
+        else gh api "repos/$REPO/issues/$PR/comments" -F body=@"$OUT/comment.md" > /dev/null; fi
+
+    - name: Fail on new tells
+      if: inputs.fail-on-new == 'true' && steps.diff.outputs.new-tells != ''
+      shell: bash
+      run: |
+        echo "::error::New tells: ${{ steps.diff.outputs.new-tells }}. See the job summary."
+        exit 1

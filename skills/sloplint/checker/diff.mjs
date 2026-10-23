@@ -150,8 +150,13 @@ function summarize(changes) {
   return out.sort((x, y) => x.rank - y.rank).map(({ t, from, to }) => (from ? { t, from, to } : { t }))
 }
 
-/** Pairs results of two reports by path and viewport, falling back to order for renamed paths. */
-function pair(before, after) {
+/**
+ * Pairs results of two reports by path and viewport, falling back to order for renamed paths.
+ * `byOrder` pairs the n-th page of one scan with the n-th of the other (two builds on different
+ * paths or ports, scanned from parallel URL lists).
+ */
+function pair(before, after, byOrder = false) {
+  if (byOrder) return before.results.map((b, i) => [b, after.results[i]]).filter((p) => p[1])
   const key = (r) => { try { const u = new URL(r.url); return `${u.pathname}${u.search}${u.hash}@${r.viewport.tag}` } catch { return `${r.url}@${r.viewport.tag}` } }
   const left = [...after.results]
   const pairs = []
@@ -167,7 +172,7 @@ function pair(before, after) {
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const swatch = (v) => (/^rgba?\(/.test(v) ? `<i class="sw" style="background:${esc(v)}"></i>` : '')
 
-export function diffReports(beforeDir, afterDir, outDir) {
+export function diffReports(beforeDir, afterDir, outDir, { byOrder = false } = {}) {
   const load = (d) => {
     const p = join(resolve(d), 'report.json')
     if (!existsSync(p)) throw new Error(`no report.json in ${d}: run sloplint scan --out ${d} first`)
@@ -177,18 +182,39 @@ export function diffReports(beforeDir, afterDir, outDir) {
   const out = resolve(outDir)
   mkdirSync(out, { recursive: true })
   const pages = []
-  for (const [b, a, byOrder] of pair(before, after)) {
+  for (const [b, a, guessed] of pair(before, after, byOrder)) {
     if (b.error || a.error || !b.snap || !a.snap) { pages.push({ b, a, skipped: b.error || a.error || 'scanned without element snapshots: rescan with this version' }); continue }
     b.snapshot = JSON.parse(readFileSync(join(resolve(beforeDir), b.snap), 'utf8'))
     a.snapshot = JSON.parse(readFileSync(join(resolve(afterDir), a.snap), 'utf8'))
-    pages.push({ b, a, byOrder, ...diffPage(b, a), shot: { before: relative(out, join(resolve(beforeDir), b.clean)), after: relative(out, join(resolve(afterDir), a.clean)) } })
+    pages.push({ b, a, byOrder: guessed, ...diffPage(b, a), shot: { before: relative(out, join(resolve(beforeDir), b.clean)), after: relative(out, join(resolve(afterDir), a.clean)) } })
     delete b.snapshot; delete a.snapshot
   }
   const summary = pages.map((p) => ({ path: p.a.url, before: p.byOrder ? p.b.url : undefined, viewport: p.a.viewport.tag, score: [p.b.score, p.a.score], fixed: p.pageFixed, new: p.pageNew, skipped: p.skipped,
     items: p.items?.map((g) => ({ n: g.n, kind: g.kind, label: g.label, text: g.text, fixes: g.fixed, adds: g.added, summary: g.summary.map((s) => s.t), changes: g.changes, before: g.before.length, after: g.after.length })) ?? [] }))
   writeFileSync(join(out, 'diff.json'), JSON.stringify({ tool: 'sloplint', generated: new Date().toISOString(), pages: summary }, null, 2))
   writeFileSync(join(out, 'diff.html'), html(pages))
+  writeFileSync(join(out, 'diff.md'), markdown(summary))
   return summary
+}
+
+/** A short summary for a pull-request comment or a CI job summary. */
+function markdown(summary) {
+  const ids = (l) => (l?.length ? l.join(' ') : '–')
+  const rows = summary.map((p) => `| ${p.path.replace(/^https?:\/\/[^/]+/, '')} | ${p.viewport} | ${p.skipped ? '–' : `${p.score[0]} → ${p.score[1]}`} | ${ids(p.fixed)} | ${ids(p.new)} | ${p.skipped ? 'skipped' : p.items.length} |`)
+  const cards = summary.filter((p) => p.items.length).map((p) => `**${p.path.replace(/^https?:\/\/[^/]+/, '')} at ${p.viewport}px**\n\n${p.items.map((g) => {
+    const n = Math.max(g.before, g.after)
+    const tells = [g.fixes.length ? `fixes ${g.fixes.join(' ')}` : '', g.adds.length ? `**adds ${g.adds.join(' ')}**` : ''].filter(Boolean).join(', ')
+    return `${g.n}. ${KIND[g.kind]} \`${g.label.split(' > ').pop()}\`${g.text ? ` «${g.text.slice(0, 40)}»` : ''}${n > 1 ? ` on ${n} elements` : ''}: ${g.summary.slice(0, 4).join(', ')}${tells ? `. ${tells}` : ''}`
+  }).join('\n')}`).join('\n\n')
+  const added = summary.flatMap((p) => p.new ?? [])
+  return `### sloplint diff
+
+${added.length ? `New tells: **${[...new Set(added)].join(' ')}**. ` : 'No new tells. '}Open \`diff/diff.html\` from the run's \`sloplint\` artifact for each change cropped before and after.
+
+| Page | Width | Score | Tells gone | New tells | Changes |
+|---|---:|---:|---|---|---:|
+${rows.join('\n')}
+${cards ? `\n<details><summary>Every change</summary>\n\n${cards}\n\n</details>\n` : ''}`
 }
 
 const KIND = { fixed: 'Fixed', new: 'New tell', changed: 'Changed', removed: 'Removed', added: 'Added' }

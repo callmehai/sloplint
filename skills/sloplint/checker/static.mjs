@@ -1,7 +1,7 @@
 // sloplint static scanner: finds the source-level tells (see tells.json, detect includes "static")
 // in CSS/SCSS/LESS and in markup (TSX/JSX/HTML/Vue/Svelte/Astro, including Tailwind class strings).
 // Usage: node static.mjs <dir> [--config .slop.json] [--json]
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync, realpathSync } from 'node:fs'
 import { extname, join, relative, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -142,7 +142,8 @@ export function scanStatic(root, { allow = {} } = {}) {
 }
 
 // CLI
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// npx and npm link start the CLI through a symlink in node_modules/.bin.
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const args = process.argv.slice(2)
   const dir = resolve(args.find((a) => !a.startsWith('--')) ?? '.')
   const cfgPath = args.includes('--config') ? args[args.indexOf('--config') + 1] : join(dir, '.slop.json')

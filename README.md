@@ -48,10 +48,10 @@ place.
 > `npx github:callmehai/sloplint <command>`, or from a clone with
 > `node skills/sloplint/checker/cli.mjs <command>`. Both take the same commands as `npx sloplint` below.
 
-`scan` drives Chromium through Playwright, which you install once:
+`scan` drives Chromium through Playwright, which comes with sloplint. Download the browser once:
 
 ```bash
-npm i -D playwright && npx playwright install chromium
+npx playwright install chromium
 ```
 
 Scan a running page:
@@ -207,6 +207,43 @@ another path with `--config`):
 
 Every exception carries a reason, so a reviewer can see why a pattern stays. The agent skill reads
 the same file and will not "fix" what it allows.
+
+## In CI: comment every pull request
+
+The repository is also a GitHub Action. Serve the base build and the pull request's build, then
+let the action scan both, comment the summary on the pull request (one comment, updated on each
+push), attach the full report with the before/after crops as an artifact, and fail the job when
+the change adds a tell:
+
+```yaml
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  sloplint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: after }
+      - uses: actions/checkout@v4
+        with: { path: before, ref: ${{ github.base_ref }} }
+      # Build and serve both, e.g. on ports 4173 and 4174.
+      - run: (cd before && npm ci && npm run build && npx vite preview --port 4173 &) && (cd after && npm ci && npm run build && npx vite preview --port 4174 &) && npx wait-on http://localhost:4173 http://localhost:4174
+      - uses: callmehai/sloplint@main
+        with:
+          before: http://localhost:4173
+          after: http://localhost:4174
+          paths: |
+            /
+            /settings
+          config: after/.slop.json
+```
+
+Inputs: `before`, `after` (a base URL or a folder of HTML files), `paths` (one per line),
+`viewports`, `scope`, `config`, `setup`, `wait`, `comment`, `fail-on-new`. See
+[`action.yml`](action.yml). This repository runs it on its own fixtures in
+[`.github/workflows/action.yml`](.github/workflows/action.yml).
 
 ## Install as a skill
 

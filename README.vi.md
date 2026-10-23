@@ -47,10 +47,10 @@ trang lộ ra là nhiều kiểu cùng xuất hiện một lúc, mà không có 
 > `npx github:callmehai/sloplint <lệnh>`, hoặc từ bản clone bằng
 > `node skills/sloplint/checker/cli.mjs <lệnh>`. Cả hai nhận đúng các lệnh của `npx sloplint` bên dưới.
 
-`scan` điều khiển Chromium qua Playwright, chỉ cần cài một lần:
+`scan` điều khiển Chromium qua Playwright, đã đi kèm sloplint. Chỉ cần tải trình duyệt một lần:
 
 ```bash
-npm i -D playwright && npx playwright install chromium
+npx playwright install chromium
 ```
 
 Quét một trang đang chạy:
@@ -206,6 +206,14 @@ hoặc chỉ đường dẫn khác bằng `--config`):
 
 Mỗi ngoại lệ đều có lý do, để người review biết vì sao một kiểu được giữ lại. Skill cho agent đọc
 cùng tệp này và sẽ không "sửa" những gì tệp đã cho phép.
+
+## Trong CI: tự comment vào mỗi pull request
+
+Repo này cũng là một GitHub Action. Dựng và chạy bản gốc lẫn bản của pull request, Action sẽ quét
+cả hai, comment bảng tóm tắt vào pull request (một comment, cập nhật sau mỗi lần push), đính kèm
+báo cáo đầy đủ có ảnh cắt trước/sau làm artifact, và đánh fail khi thay đổi làm xuất hiện dấu hiệu
+mới. Ví dụ workflow và danh sách input xem ở [README tiếng Anh](README.md#in-ci-comment-every-pull-request)
+và [`action.yml`](action.yml).
 
 ## Cài làm skill
 

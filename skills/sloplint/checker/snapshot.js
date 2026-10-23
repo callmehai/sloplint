@@ -17,13 +17,15 @@
   const MAX = 8000
   const out = []
 
-  // Tag path with the position among same-tag siblings: stable when only styles or text change.
+  // Path of tag, first class and position among siblings with both: stable when styles or text
+  // change, and when a sibling of another kind (an icon tile) is added or removed.
   const keys = new Map()
+  const first = (e) => (e.getAttribute('class') ?? '').trim().split(/\s+/)[0] ?? ''
   const keyOf = (e) => {
     if (keys.has(e)) return keys.get(e)
     let i = 1
-    for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (s.tagName === e.tagName) i++
-    const own = `${e.tagName.toLowerCase()}${i > 1 ? `:${i}` : ''}`
+    for (let s = e.previousElementSibling; s; s = s.previousElementSibling) if (s.tagName === e.tagName && first(s) === first(e)) i++
+    const own = `${e.tagName.toLowerCase()}${first(e) ? `.${first(e)}` : ''}${i > 1 ? `:${i}` : ''}`
     const k = e.parentElement && e.parentElement !== document.documentElement ? `${keyOf(e.parentElement)}>${own}` : own
     keys.set(e, k)
     return k

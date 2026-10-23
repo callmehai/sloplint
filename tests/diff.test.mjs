@@ -16,7 +16,7 @@ test('diff: the removed chips, the new text and the darker empty value are each 
   const dir = mkdtempSync(join(tmpdir(), 'sloplint-diff-'))
   try {
     // A scan exits 1 when it finds slop; the fixture is not meant to be clean.
-    for (const [side, file] of [['b', 'before.html'], ['a', 'after.html']]) {
+    for (const [side, file] of [['b', 'before/index.html'], ['a', 'after/index.html']]) {
       try { sloplint('scan', `fixtures/diff/${file}`, '--out', join(dir, side), '--viewports', '1440', '--scope', 'app') } catch (e) { if (e.status !== 1) throw e }
     }
     sloplint('diff', join(dir, 'b'), join(dir, 'a'), '--out', join(dir, 'd'))

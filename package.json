@@ -12,7 +12,8 @@
     "integrations/",
     "README.md",
     "README.vi.md",
-    "LICENSE"
+    "LICENSE",
+    "action.yml"
   ],
   "scripts": {
     "test": "node --test \"tests/**/*.test.mjs\"",
@@ -20,17 +21,6 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "peerDependencies": {
-    "playwright": ">=1.40"
-  },
-  "peerDependenciesMeta": {
-    "playwright": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "playwright": "1.64.1"
   },
   "keywords": [
     "ai-slop",
@@ -45,5 +35,8 @@
     "type": "git",
     "url": "git+https://github.com/callmehai/sloplint.git"
   },
-  "homepage": "https://github.com/callmehai/sloplint#readme"
+  "homepage": "https://github.com/callmehai/sloplint#readme",
+  "dependencies": {
+    "playwright": "1.64.1"
+  }
 }
