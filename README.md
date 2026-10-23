@@ -30,6 +30,8 @@ place.
   and measures computed styles, so it sees what your CSS framework actually produced.
 - **A CLI** that loads pages in Chromium at desktop and phone width, scores them and writes an
   HTML report with annotated screenshots, plus a static scanner for source files.
+- **A before/after diff** that boxes every change between two scans with the same number on both
+  screenshots: tells removed, tells added, and every other visible change, so no fix goes unseen.
 - **An agent skill** (`skills/sloplint/SKILL.md`) for Claude Code, Codex, Cursor and other
   agents, so the tells are avoided while the code is written, not only caught afterwards.
 - **References** with the evidence behind every fix:
@@ -86,6 +88,22 @@ export default async ({ context, url }) => {
   await context.request.post(new URL('/api/auth/login', url).href, { data: { email: process.env.SCAN_EMAIL, password: process.env.SCAN_PASSWORD } })
 }
 ```
+
+Compare two scans of the same screens, taken before and after a change:
+
+```bash
+npx sloplint scan <urls> --out before     # on the old build
+npx sloplint scan <urls> --out after      # on the new build, same URLs
+npx sloplint diff before after --out slop-diff
+```
+
+`diff` pairs pages by path and width, then compares every visible element: its text, the computed
+styles a reader can see (colour, size, weight, background, border, radius, shadow, spacing), its
+`::before`/`::after`, its icon, and the tells found on it. Each change becomes a numbered item with
+a box on both screenshots: red where a tell was, green where it was fixed, blue for any other
+change, dashed for removed or added elements. The same change on many rows is one item.
+`slop-diff/diff.json` holds the same items for an agent to read. Each scan keeps an unmarked
+screenshot and an element snapshot for this; `--no-snapshot` skips them.
 
 Scan source files without a browser:
 

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remit · People</title>
+<!-- sloplint diff fixture, before. after.html differs in exactly the places marked data-change. -->
+<style>
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1b1f24; background: #fff }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px }
+  h1 { font-size: 20px; margin: 0 0 16px }
+  table { width: 100%; border-collapse: collapse }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #d8dee4 }
+  .chip { display: inline-block; padding: 0 8px; border-radius: 999px; background: #dafbe1; color: #116329; font-size: 12px }
+  .empty { color: #b4bac1 }
+</style>
+</head>
+<body>
+<main>
+  <h1 data-change="text">People</h1>
+  <table>
+    <thead><tr><th>Name</th><th>Team</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Lan Pham</td><td>Finance</td><td data-change="removed"><span class="chip">Active</span></td></tr>
+      <tr><td>Minh Tran</td><td>Legal</td><td><span class="chip">Active</span></td></tr>
+      <tr><td>An Vo</td><td><span class="empty" data-change="color">No team</span></td><td><span class="chip">Active</span></td></tr>
+      <tr><td>Hoa Le</td><td>Finance</td><td><span class="chip">Active</span></td></tr>
+      <tr><td>Quang Do</td><td>Ops</td><td><span class="chip">Active</span></td></tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

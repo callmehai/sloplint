@@ -89,6 +89,22 @@ export default async ({ context, url }) => {
 }
 ```
 
+So sánh hai lần quét cùng các màn, trước và sau khi sửa:
+
+```bash
+npx sloplint scan <urls> --out before     # bản cũ
+npx sloplint scan <urls> --out after      # bản mới, đúng các URL đó
+npx sloplint diff before after --out slop-diff
+```
+
+`diff` ghép trang theo đường dẫn và độ rộng, rồi so từng phần tử đang hiển thị: chữ, các style
+người xem thấy được (màu, cỡ chữ, độ đậm, nền, viền, bo góc, bóng, khoảng cách), `::before`/`::after`,
+icon, và các dấu hiệu tìm thấy trên nó. Mỗi thay đổi là một mục có số, khoanh trên cả hai ảnh: đỏ
+là chỗ có dấu hiệu, xanh lá là chỗ đã sửa, xanh dương là thay đổi khác, nét đứt là phần tử bị bỏ
+hoặc thêm. Cùng một thay đổi trên nhiều dòng gộp thành một mục. `slop-diff/diff.json` chứa đúng
+các mục đó để agent đọc. Mỗi lần quét giữ thêm ảnh không khoanh và snapshot phần tử cho việc này;
+`--no-snapshot` để bỏ qua.
+
 Quét mã nguồn, không cần trình duyệt:
 
 ```bash

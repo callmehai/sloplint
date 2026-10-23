@@ -118,7 +118,17 @@ Screen      Width  Score before → after  Removed                     Allowed  
 Meetings    1440   9 (slop) → 2 (clean)  L1 KPI tiles, S6 glow, M1   C1 (ADR-12)    S5 on the account menu (overlay)
 ```
 
-Attach before/after screenshots. List what you deleted, so a reviewer can see the pass happened.
+Then box every change, so none is missed in review:
+
+```bash
+node <skill>/checker/cli.mjs diff <before-report> <after-report> --out slop-diff
+```
+
+Scan the old build into one report and the new one into another, with the same URLs (a different
+URL is paired by order and flagged). Read `slop-diff/diff.json`: every item should be a fix you
+meant. An item you did not intend is a regression; a tell you meant to fix that is not in
+`fixed` is still there. Link `slop-diff/diff.html` from your report: it shows each change with
+the same number on the before and after screenshots.
 
 ## Score
 

@@ -10,7 +10,7 @@
 //   allow?: { [id]: string | true | { selector?: string, reason?: string } }
 //                                           findings that a project has sanctioned (kept, marked allowed)
 //   copy?: { buzzwords?: {en,vi}, genericCta?: {en,vi}, templateLeak?: string[] }
-//   mark?: boolean                          set data-slop-found="ID ..." on reported elements (tests)
+//   mark?: boolean                          set data-slop-found="ID ..." on reported, not allowed elements (tests, diff)
 //   limit?: number                          max findings per tell (default 25)
 // }
 // returns { url, viewport, findings: [{ id, label, selector, rect, detail, allowed?, reason? }], stats }
@@ -79,12 +79,12 @@
       f.label = `${e.tagName.toLowerCase()}${e.classList.length ? '.' + [...e.classList].slice(0, 2).join('.') : ''} «${short(text(e), 40)}»`
       f.selector = cssPath(e)
       f.rect = rectOf(e)
-      if (opts.mark) e.setAttribute('data-slop-found', `${e.getAttribute('data-slop-found') ?? ''} ${id}`.trim())
     } else {
       f.label = 'page'
     }
     const a = allowFor(id, e)
     if (a) { f.allowed = true; f.reason = a.reason }
+    else if (e && opts.mark) e.setAttribute('data-slop-found', `${e.getAttribute('data-slop-found') ?? ''} ${id}`.trim())
     findings.push(f)
   }
 
