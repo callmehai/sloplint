@@ -3,7 +3,9 @@
 //   sloplint scan <url...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
 //                              [--out slop-report] [--hover] [--storage-state auth.json] [--setup login.mjs] [--wait 600]
 // --setup: a module whose default export `async ({ context, page, url, viewport }) => {}` runs in every
-// fresh browser context before the page loads (sign in, seed localStorage, accept cookies).
+// fresh browser context before the page loads (sign in, seed localStorage, accept cookies). An optional
+// named export `ready({ page, url, viewport })` runs after the page loads, before it is measured
+// (open a tab, a panel or a dialog the screen only shows after a click).
 // Each scan also keeps an unmarked screenshot and an element snapshot per page (--no-snapshot skips them).
 //   sloplint diff <before-report-dir> <after-report-dir> [--out slop-diff] [--by order] [--fail-on-new]
 //   sloplint static <dir> [--config .slop.json] [--json]
@@ -153,7 +155,9 @@ async function scan(urls, args) {
   mkdirSync(join(outDir, 'shots'), { recursive: true })
   const snapshots = !args['no-snapshot']
   const options = { ignore: config.ignore ?? [], allow: config.allow ?? {}, copy: copyLists(), mark: snapshots }
-  const setup = args.setup ? (await import(pathToFileURL(resolve(args.setup)).href)).default : null
+  const hooks = args.setup ? await import(pathToFileURL(resolve(args.setup)).href) : {}
+  const setup = hooks.default ?? null
+  const ready = hooks.ready ?? null
   const browser = await chromium.launch()
   const results = []
   const slugs = new Set()
@@ -174,11 +178,12 @@ async function scan(urls, args) {
         await page.waitForTimeout(Number(args.wait ?? 600))
         // Close a newsletter/cookie modal that opens on load, so it does not dim what is measured.
         await page.keyboard.press('Escape').catch(() => {})
+        if (ready) { await ready({ page, url, viewport: vp }); await page.waitForTimeout(Number(args.wait ?? 600)) }
         await page.mouse.move(1, 1)
         const res = await page.evaluate(`(${DETECT})(${JSON.stringify(options)})`)
-        // The query is part of the name: /list and /list?status=all are different screens.
+        // The query and hash are part of the name: /list and /list?status=all are different screens.
         const u = new URL(url)
-        let slug = `${u.hostname || 'file'}${u.pathname}${u.search}`.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'page'
+        let slug = `${u.hostname || 'file'}${u.pathname}${u.search}${u.hash}`.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'page'
         for (let i = 2; slugs.has(`${slug}-${vp.tag}`); i++) slug = `${slug.replace(/-\d+$/, '')}-${i}`
         slugs.add(`${slug}-${vp.tag}`)
         if (args.hover && !vp.mobile) {

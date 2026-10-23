@@ -69,6 +69,7 @@ It catches what the rendered page hides: Tailwind gradients and glows, `transiti
 
 ```bash
 node <skill>/checker/cli.mjs scan <url...> --viewports 1440,390 --hover --out slop-report
+# a tab, panel or dialog: export ready({ page, url }) from the same module; it runs after load
 # signed-in screens: --setup login.mjs, a module run in every fresh browser context before the page
 # loads: export default async ({ context, page, url }) => { /* sign in, accept cookies */ }
 # (--storage-state auth.json also works when the session survives being reused)

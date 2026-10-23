@@ -54,7 +54,7 @@ place.
 npx playwright install chromium
 ```
 
-To stay on one version, pin it: `npx github:callmehai/sloplint#v0.2.1`. A pinned or cached copy
+To stay on one version, pin it: `npx github:callmehai/sloplint#v0.3.0`. A pinned or cached copy
 prints one line after the command when a newer release is out (checked at most once a day, never
 in CI; `SLOPLINT_NO_UPDATE_CHECK=1` turns it off). Watch the repository for *Releases* to hear
 about them on GitHub.
@@ -91,6 +91,13 @@ storage state after the first page):
 // login.mjs
 export default async ({ context, url }) => {
   await context.request.post(new URL('/api/auth/login', url).href, { data: { email: process.env.SCAN_EMAIL, password: process.env.SCAN_PASSWORD } })
+}
+
+// Optional: runs after the page loads, before it is measured. Use it for what a screen only shows
+// after a click. A URL hash is a handy way to say which (the hash is part of the report's page name).
+export async function ready({ page, url }) {
+  const tab = decodeURIComponent(new URL(url).hash.match(/^#tab=(.+)$/)?.[1] ?? '')
+  if (tab) await page.getByRole('tab', { name: tab }).click()
 }
 ```
 

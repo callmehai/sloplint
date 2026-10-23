@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remit · Reports</title>
+<!-- sloplint ready() fixture: the gradient heading (C2) exists only after the tab is clicked. -->
+<style>
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1b1f24; background: #fff }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px }
+  [role="tab"] { font: inherit; padding: 6px 12px; border: 1px solid #d8dee4; background: #fff }
+  .shiny { font-size: 28px; background: linear-gradient(90deg, #6d28d9, #db2777); -webkit-background-clip: text; background-clip: text; color: transparent }
+</style>
+</head>
+<body>
+<main>
+  <div role="tablist"><button role="tab" aria-selected="true">Overview</button><button role="tab" aria-selected="false" id="trends">Trends</button></div>
+  <section id="panel"><p>Monthly totals.</p></section>
+</main>
+<script>
+  document.getElementById('trends').addEventListener('click', () => {
+    document.getElementById('panel').innerHTML = '<h2 class="shiny">Insights that matter</h2>'
+  })
+</script>
+</body>
+</html>
