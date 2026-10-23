@@ -5,9 +5,9 @@
 // --setup: a module whose default export `async ({ context, page, url, viewport }) => {}` runs in every
 // fresh browser context before the page loads (sign in, seed localStorage, accept cookies).
 // Each scan also keeps an unmarked screenshot and an element snapshot per page (--no-snapshot skips them).
-//   sloplint diff <before-report-dir> <after-report-dir> [--out slop-diff]
+//   sloplint diff <before-report-dir> <after-report-dir> [--out slop-diff] [--by order] [--fail-on-new]
 //   sloplint static <dir> [--config .slop.json] [--json]
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, realpathSync } from 'node:fs'
 import { dirname, join, resolve, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { scanStatic } from './static.mjs'
@@ -155,6 +155,7 @@ async function scan(urls, args) {
   const setup = args.setup ? (await import(pathToFileURL(resolve(args.setup)).href)).default : null
   const browser = await chromium.launch()
   const results = []
+  const slugs = new Set()
   for (const raw of urls) {
     const url = /^[a-z]+:\/\//i.test(raw) ? raw : pathToFileURL(resolve(raw)).href
     for (const vp of viewports) {
@@ -174,7 +175,11 @@ async function scan(urls, args) {
         await page.keyboard.press('Escape').catch(() => {})
         await page.mouse.move(1, 1)
         const res = await page.evaluate(`(${DETECT})(${JSON.stringify(options)})`)
-        const slug = `${new URL(url).hostname || 'file'}${new URL(url).pathname}`.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'page'
+        // The query is part of the name: /list and /list?status=all are different screens.
+        const u = new URL(url)
+        let slug = `${u.hostname || 'file'}${u.pathname}${u.search}`.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'page'
+        for (let i = 2; slugs.has(`${slug}-${vp.tag}`); i++) slug = `${slug.replace(/-\d+$/, '')}-${i}`
+        slugs.add(`${slug}-${vp.tag}`)
         if (args.hover && !vp.mobile) {
           const seen = new Set(res.findings.filter((f) => f.id === 'M2').map((f) => `${f.rect?.x},${f.rect?.y}`))
           for (const f of await hoverPass(page)) if (!seen.has(`${f.rect.x},${f.rect.y}`)) res.findings.push(f)
@@ -195,7 +200,8 @@ async function scan(urls, args) {
           writeFileSync(join(outDir, extra.snap), JSON.stringify(await page.evaluate(`(${SNAPSHOT})()`)))
           await page.screenshot({ path: join(outDir, extra.clean), fullPage: true, type: 'jpeg', quality: 85 })
         }
-        results.push({ url, ...res, viewport: vp, ...s, band: band(s.score)[1], shot, ...extra })
+        // `url` stays the address asked for, so pages pair across scans; a redirect shows in `finalUrl`.
+        results.push({ ...res, url, ...(res.url !== url ? { finalUrl: res.url } : {}), viewport: vp, ...s, band: band(s.score)[1], shot, ...extra })
       } catch (e) {
         error = String(e?.message ?? e).split('\n')[0]
         results.push({ url, viewport: vp, error, findings: [], score: 0, tells: [], band: 'error' })
@@ -262,13 +268,17 @@ async function main() {
     process.exitCode = results.some((r) => r.band === 'slop') ? 1 : 0
   } else if (cmd === 'diff' && args._.length === 2) {
     const out = resolve(args.out ?? 'slop-diff')
-    for (const p of diffReports(args._[0], args._[1], out)) {
+    const pages = diffReports(args._[0], args._[1], out, { byOrder: args.by === 'order' })
+    for (const p of pages) {
       console.log(`${String(p.score[0]).padStart(3)} → ${String(p.score[1]).padEnd(3)} ${p.viewport.padStart(4)}  ${p.path}${p.before ? ` (paired by order with ${p.before})` : ''}  ${p.skipped ? p.skipped : `${p.items.length} changes${p.fixed.length ? `, gone ${p.fixed.join(' ')}` : ''}${p.new.length ? `, new ${p.new.join(' ')}` : ''}`}`)
     }
     console.log(`\nDiff: ${join(out, 'diff.html')}`)
+    // --fail-on-new: exit 1 when the after scan has a tell the before scan did not.
+    if (args['fail-on-new'] && pages.some((p) => p.new?.length)) process.exitCode = 1
   } else if (cmd === 'static' && args._.length) {
     const dir = resolve(args._[0])
-    const cfgPath = args.config ?? join(dir, '.slop.json')
+    // The scanned folder's own .slop.json, else the one in the working directory (the project root).
+    const cfgPath = args.config ?? [join(dir, '.slop.json'), '.slop.json'].find((p) => existsSync(p)) ?? '.slop.json'
     const config = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {}
     const found = scanStatic(dir, config)
     if (args.json) console.log(JSON.stringify(found, null, 2))
@@ -287,10 +297,11 @@ async function main() {
     console.log(`Usage:
   sloplint scan <url|file...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
                     [--out slop-report] [--hover] [--storage-state auth.json] [--setup login.mjs] [--wait 600] [--no-snapshot]
-  sloplint diff <before-report-dir> <after-report-dir> [--out slop-diff]
+  sloplint diff <before-report-dir> <after-report-dir> [--out slop-diff] [--by order] [--fail-on-new]
   sloplint static <dir> [--config .slop.json] [--json]`)
     process.exitCode = cmd ? 2 : 0
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main()
+// npx and npm link start the CLI through a symlink in node_modules/.bin.
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) main()

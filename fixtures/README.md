@@ -11,7 +11,7 @@ The ids are the ones in [`skills/sloplint/tells.json`](../skills/sloplint/tells.
 | `clean-landing.html` | The same landing page done properly. |
 | `static/slop.css`, `static/slop.tsx` | Source files covering every tell whose `detect` includes `static`. |
 | `static/clean.css` | The stylesheet of `clean-app.html`, kept identical to it. |
-| `diff/before.html`, `diff/after.html` | A pair for `sloplint diff`: the status chip on every row becomes text, a title changes, a faint value darkens. `tests/diff.test.mjs` expects exactly those four items. |
+| `diff/before/index.html`, `diff/after/index.html` | A pair for `sloplint diff`: the status chip on every row becomes text, a title changes, a faint value darkens. `tests/diff.test.mjs` expects exactly those four items. |
 
 Every page is self-contained: inline CSS, no fonts, scripts or network access. Fonts named in the
 CSS (Inter, Space Grotesk, Avenir Next…) do not need to load; the checker reads the computed

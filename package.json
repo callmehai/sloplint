@@ -1,6 +1,6 @@
 {
   "name": "sloplint",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Detect the patterns that make a web UI look AI-generated, and fix them the way design systems do.",
   "type": "module",
   "license": "MIT",
@@ -12,7 +12,8 @@
     "integrations/",
     "README.md",
     "README.vi.md",
-    "LICENSE"
+    "LICENSE",
+    "action.yml"
   ],
   "scripts": {
     "test": "node --test \"tests/**/*.test.mjs\"",
@@ -20,17 +21,6 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "peerDependencies": {
-    "playwright": ">=1.40"
-  },
-  "peerDependenciesMeta": {
-    "playwright": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "playwright": "1.64.1"
   },
   "keywords": [
     "ai-slop",
@@ -45,5 +35,8 @@
     "type": "git",
     "url": "git+https://github.com/callmehai/sloplint.git"
   },
-  "homepage": "https://github.com/callmehai/sloplint#readme"
+  "homepage": "https://github.com/callmehai/sloplint#readme",
+  "dependencies": {
+    "playwright": "1.64.1"
+  }
 }

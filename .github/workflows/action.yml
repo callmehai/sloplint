@@ -1,0 +1,21 @@
+# Runs the sloplint diff action from this repository on the fixture pair, so every pull request
+# shows what the action posts: a job summary, an artifact and one comment.
+name: action
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          before: fixtures/diff/before
+          after: fixtures/diff/after
+          paths: index.html
+          viewports: 1440,390
+          scope: app
+          # The fixture pair only removes tells; a new one would be a regression in the checker.
+          fail-on-new: 'true'
