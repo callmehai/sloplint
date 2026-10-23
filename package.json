@@ -1,6 +1,6 @@
 {
   "name": "sloplint",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Detect the patterns that make a web UI look AI-generated, and fix them the way design systems do.",
   "type": "module",
   "license": "MIT",

@@ -12,6 +12,7 @@ import { dirname, join, resolve, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { scanStatic } from './static.mjs'
 import { diffReports } from './diff.mjs'
+import { checkForUpdate } from './update.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SKILL = resolve(HERE, '..')
@@ -262,6 +263,8 @@ ${sections}</main></body></html>`
 
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2)
+  // Asked while the command runs; printed after it, on stderr, so JSON output stays clean.
+  const update = cmd ? checkForUpdate() : Promise.resolve()
   const args = parseArgs(rest)
   if (cmd === 'scan' && args._.length) {
     const results = await scan(args._, args)
@@ -301,6 +304,8 @@ async function main() {
   sloplint static <dir> [--config .slop.json] [--json]`)
     process.exitCode = cmd ? 2 : 0
   }
+  const notice = await update
+  if (notice) console.error(`\n${notice}`)
 }
 
 // npx and npm link start the CLI through a symlink in node_modules/.bin.

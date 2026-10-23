@@ -54,6 +54,11 @@ place.
 npx playwright install chromium
 ```
 
+To stay on one version, pin it: `npx github:callmehai/sloplint#v0.2.1`. A pinned or cached copy
+prints one line after the command when a newer release is out (checked at most once a day, never
+in CI; `SLOPLINT_NO_UPDATE_CHECK=1` turns it off). Watch the repository for *Releases* to hear
+about them on GitHub.
+
 Scan a running page:
 
 ```bash

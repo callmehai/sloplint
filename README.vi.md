@@ -53,6 +53,11 @@ trang lộ ra là nhiều kiểu cùng xuất hiện một lúc, mà không có 
 npx playwright install chromium
 ```
 
+Muốn đứng yên một phiên bản thì ghim: `npx github:callmehai/sloplint#v0.2.1`. Bản đã ghim hoặc
+còn trong cache sẽ in một dòng sau mỗi lệnh khi có release mới hơn (kiểm tra tối đa một lần mỗi
+ngày, không chạy trong CI; đặt `SLOPLINT_NO_UPDATE_CHECK=1` để tắt). Muốn GitHub báo khi có bản
+mới thì Watch repo, chọn *Releases*.
+
 Quét một trang đang chạy:
 
 ```bash
