@@ -1,4 +1,4 @@
-// anti-ai-slop in-page checker. One arrow function with no imports, so it runs wherever a page can
+// sloplint in-page checker. One arrow function with no imports, so it runs wherever a page can
 // evaluate a function:
 //   Playwright:       await page.evaluate(`(${source})(${JSON.stringify(options)})`)
 //   chrome-devtools:  evaluate_script with this file's text as `function`
@@ -28,6 +28,9 @@
     if (s.display === 'none' || s.visibility === 'hidden') return true
     // Opacity 0 is hidden, unless it is waiting for a scroll-reveal (M4 needs to see those).
     if (s.opacity === '0' && s.animationName === 'none' && !e.matches('[data-aos], [data-animate], [data-reveal], [class*="fade"], [class*="reveal"]')) return true
+    // An ancestor at opacity 0 or visibility hidden (a closed menu) hides it too; reveal-on-scroll waits are still content.
+    if (e.checkVisibility && !e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) &&
+      !e.closest('[data-aos], [data-animate], [data-reveal], [class*="fade"], [class*="reveal"]')) return true
     const r = e.getBoundingClientRect()
     if (r.width < 1 || r.height < 1) return true
     // visually-hidden pattern: clipped 1px boxes

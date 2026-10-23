@@ -1,5 +1,5 @@
 ---
-name: anti-ai-slop
+name: sloplint
 description: Find and fix the patterns that make a web UI look AI-generated ("AI slop") — decorative gradients, glows, glass, tracked-caps eyebrows, coloured side stripes, KPI tiles, icons in tinted tiles, endless motion, buzzword copy and 40-odd more — in product/app screens and landing pages. Combines a measured DOM checker (run on the rendered page at desktop and phone widths), a source scanner (CSS, Tailwind, JSX/TSX, Vue, Svelte), a weighted score, and professional fixes grounded in Cloudscape (AWS), Fluent 2 (Microsoft), Material 3 (Google), Carbon (IBM), Atlassian, Primer (GitHub) and Apple HIG. Use when building or reviewing any front-end screen, before showing screenshots, in UI code review, and whenever someone says "AI slop", "looks AI-generated", "generic", "template-y", "cheap", "vibe-coded", "trông như AI làm", "rẻ tiền", "làm FE cho tử tế".
 ---
 

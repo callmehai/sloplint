@@ -1,4 +1,4 @@
-// anti-ai-slop static scanner: finds the source-level tells (see tells.json, detect includes "static")
+// sloplint static scanner: finds the source-level tells (see tells.json, detect includes "static")
 // in CSS/SCSS/LESS and in markup (TSX/JSX/HTML/Vue/Svelte/Astro, including Tailwind class strings).
 // Usage: node static.mjs <dir> [--config .slop.json] [--json]
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'

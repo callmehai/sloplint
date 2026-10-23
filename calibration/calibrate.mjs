@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const REG_PATH = join(ROOT, 'skills/anti-ai-slop/tells.json')
+const REG_PATH = join(ROOT, 'skills/sloplint/tells.json')
 const registry = JSON.parse(readFileSync(REG_PATH, 'utf8'))
 const TELLS = Object.fromEntries(registry.tells.map((t) => [t.id, t]))
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'))

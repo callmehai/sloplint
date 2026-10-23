@@ -1,4 +1,4 @@
-# anti-ai-slop
+# sloplint
 
 Find the UI patterns that make a web front-end look AI-generated, and replace them with what
 professional design systems actually do. Works on product UIs (admin screens, dashboards, tables,
@@ -24,13 +24,13 @@ place.
 
 ## What the kit gives you
 
-- **A registry of 54 tells** (`skills/anti-ai-slop/tells.json`), each with an ID, scope (app,
+- **A registry of 54 tells** (`skills/sloplint/tells.json`), each with an ID, scope (app,
   landing or both), weight and a concrete fix.
-- **A DOM checker** (`skills/anti-ai-slop/checker/detect.js`) that runs inside the rendered page
+- **A DOM checker** (`skills/sloplint/checker/detect.js`) that runs inside the rendered page
   and measures computed styles, so it sees what your CSS framework actually produced.
 - **A CLI** that loads pages in Chromium at desktop and phone width, scores them and writes an
   HTML report with annotated screenshots, plus a static scanner for source files.
-- **An agent skill** (`skills/anti-ai-slop/SKILL.md`) for Claude Code, Codex, Cursor and other
+- **An agent skill** (`skills/sloplint/SKILL.md`) for Claude Code, Codex, Cursor and other
   agents, so the tells are avoided while the code is written, not only caught afterwards.
 - **References** with the evidence behind every fix:
   - `references/tells.md`: each tell, why it reads as generated, how to fix it
@@ -42,10 +42,9 @@ place.
 
 ## Quick start
 
-> The npm package name `anti-ai-slop` is **provisional**. That name is currently taken on npm by
-> an unrelated package, so until this kit is published under its final name, `npx anti-ai-slop`
-> runs someone else's code. Until then, run the CLI from a clone of this repository:
-> `node skills/anti-ai-slop/checker/cli.mjs` takes the same commands as `npx anti-ai-slop` below.
+> `sloplint` is not on npm yet. Until it is, run it straight from GitHub with
+> `npx github:callmehai/sloplint <command>`, or from a clone with
+> `node skills/sloplint/checker/cli.mjs <command>`. Both take the same commands as `npx sloplint` below.
 
 `scan` drives Chromium through Playwright, which you install once:
 
@@ -56,13 +55,13 @@ npm i -D playwright && npx playwright install chromium
 Scan a running page:
 
 ```bash
-npx anti-ai-slop scan http://localhost:5173 --scope app
+npx sloplint scan http://localhost:5173 --scope app
 ```
 
 Full usage:
 
 ```text
-npx anti-ai-slop scan <url...> [--viewports 1440,390] [--scope app|landing|both]
+npx sloplint scan <url...> [--viewports 1440,390] [--scope app|landing|both]
                                [--config .slop.json] [--out slop-report] [--hover]
                                [--setup login.mjs] [--storage-state auth.json] [--wait 600]
 ```
@@ -91,7 +90,7 @@ export default async ({ context, url }) => {
 Scan source files without a browser:
 
 ```bash
-npx anti-ai-slop static src
+npx sloplint static src
 ```
 
 `static <dir>` reads CSS, SCSS, TSX, JSX, HTML, Vue and Svelte files for the tells marked `static`
@@ -106,7 +105,7 @@ Playwright:
 ```js
 import { readFileSync } from 'node:fs';
 
-const detect = readFileSync('skills/anti-ai-slop/checker/detect.js', 'utf8');
+const detect = readFileSync('skills/sloplint/checker/detect.js', 'utf8');
 const options = { ignore: ['.third-party-widget'], allow: {} };
 const result = await page.evaluate(`(${detect})(${JSON.stringify(options)})`);
 // result.findings: [{ id, label, selector, rect, detail, allowed?, reason? }]
@@ -193,25 +192,25 @@ the same file and will not "fix" what it allows.
 **Claude Code.** Copy the skill folder into your user or project skills:
 
 ```bash
-cp -r skills/anti-ai-slop ~/.claude/skills/    # every project
-cp -r skills/anti-ai-slop .claude/skills/      # this project only
+cp -r skills/sloplint ~/.claude/skills/    # every project
+cp -r skills/sloplint .claude/skills/      # this project only
 ```
 
-**Codex and other agents that read AGENTS.md.** Keep `skills/anti-ai-slop` in the repository and
+**Codex and other agents that read AGENTS.md.** Keep `skills/sloplint` in the repository and
 point at it:
 
 ```markdown
 ## UI
-Before building or reviewing any UI, read `skills/anti-ai-slop/SKILL.md` and follow it.
+Before building or reviewing any UI, read `skills/sloplint/SKILL.md` and follow it.
 ```
 
-**Cursor.** Copy `integrations/cursor/anti-ai-slop.mdc` into `.cursor/rules/`. The rule loads for
-style and component files and points Cursor at `skills/anti-ai-slop/SKILL.md`, so keep the skill
+**Cursor.** Copy `integrations/cursor/sloplint.mdc` into `.cursor/rules/`. The rule loads for
+style and component files and points Cursor at `skills/sloplint/SKILL.md`, so keep the skill
 folder at that path or edit the path in the rule.
 
 ## The tells
 
-Generated from `skills/anti-ai-slop/tells.json`. Scope: `app` = product UI, `landing` = marketing
+Generated from `skills/sloplint/tells.json`. Scope: `app` = product UI, `landing` = marketing
 pages. Detect: `dom` = the in-page checker, `static` = the source scanner, `manual` = needs a person
 or an agent reading the screen. Fixes are in `references/tells.md`.
 
@@ -275,7 +274,7 @@ or an agent reading the screen. Fixes are in `references/tells.md`.
 ## Credits
 
 This kit stands on other people's work. Full notes are in
-[references/sources.md](skills/anti-ai-slop/references/sources.md).
+[references/sources.md](skills/sloplint/references/sources.md).
 
 - **Adrian Krebs** for the only measured study of these patterns, and its method of checking
   computed styles in a real browser.
@@ -285,7 +284,7 @@ This kit stands on other people's work. Full notes are in
 - Community skills: **taste-skill** (Leonxlnx), **Impeccable** (Paul Bakaus), **Hallmark**
   (Nutlope / Together AI), **Uncodixfy** (cyxzdev), **antislop** (miqdadbadjuber), **DeSlop**
   (nate-zz), **Anti-AI-UI** (Vanszs), **no-slop-ui** (LeoStehlik) and **anti-ai-slop**
-  (Vinayak-Shukla-03, a separate project with the same name).
+  (Vinayak-Shukla-03).
 - The design system teams behind **Cloudscape, Carbon, Atlassian, Primer, Fluent 2, Material 3**
   and **Apple HIG**, whose public guidance is the baseline for every fix.
 

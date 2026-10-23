@@ -1,7 +1,7 @@
 # Fixtures
 
 Test pages for the checker (`checker/detect.js`) and the static scanner (`checker/static.mjs`).
-The ids are the ones in [`skills/anti-ai-slop/tells.json`](../skills/anti-ai-slop/tells.json).
+The ids are the ones in [`skills/sloplint/tells.json`](../skills/sloplint/tells.json).
 
 | File | What it is |
 |---|---|
@@ -11,7 +11,6 @@ The ids are the ones in [`skills/anti-ai-slop/tells.json`](../skills/anti-ai-slo
 | `clean-landing.html` | The same landing page done properly. |
 | `static/slop.css`, `static/slop.tsx` | Source files covering every tell whose `detect` includes `static`. |
 | `static/clean.css` | The stylesheet of `clean-app.html`, kept identical to it. |
-| `screenshots/` | `{name}-1440.png` and `{name}-390.png`, full page, for eyeballing. Regenerate them whenever a page changes. |
 
 Every page is self-contained: inline CSS, no fonts, scripts or network access. Fonts named in the
 CSS (Inter, Space Grotesk, Avenir Next…) do not need to load; the checker reads the computed
@@ -64,5 +63,5 @@ cause.
   here in the same change.
 - When the checker misses a marked instance, fix the checker unless the instance is genuinely
   atypical. Do not delete the mark to make a test pass.
-- After editing a page, regenerate its screenshots and look at them: the clean pages should look
+- After editing a page, open it in a browser at 1440 and 390 and look at it: the clean pages should look
   like something a careful product team ships; the slop pages like typical 2025–2026 AI output.

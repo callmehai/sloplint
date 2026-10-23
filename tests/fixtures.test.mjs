@@ -7,11 +7,11 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
-import { scanStatic } from '../skills/anti-ai-slop/checker/static.mjs'
+import { scanStatic } from '../skills/sloplint/checker/static.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const DETECT = readFileSync(join(ROOT, 'skills/anti-ai-slop/checker/detect.js'), 'utf8')
-const REGISTRY = JSON.parse(readFileSync(join(ROOT, 'skills/anti-ai-slop/tells.json'), 'utf8'))
+const DETECT = readFileSync(join(ROOT, 'skills/sloplint/checker/detect.js'), 'utf8')
+const REGISTRY = JSON.parse(readFileSync(join(ROOT, 'skills/sloplint/tells.json'), 'utf8'))
 const TELLS = Object.fromEntries(REGISTRY.tells.map((t) => [t.id, t]))
 const fixture = (name) => pathToFileURL(join(ROOT, 'fixtures', name)).href
 

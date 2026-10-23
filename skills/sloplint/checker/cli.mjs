@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// anti-ai-slop CLI.
-//   anti-ai-slop scan <url...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
+// sloplint CLI.
+//   sloplint scan <url...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
 //                              [--out slop-report] [--hover] [--storage-state auth.json] [--setup login.mjs] [--wait 600]
 // --setup: a module whose default export `async ({ context, page, url, viewport }) => {}` runs in every
 // fresh browser context before the page loads (sign in, seed localStorage, accept cookies).
-//   anti-ai-slop static <dir> [--config .slop.json] [--json]
+//   sloplint static <dir> [--config .slop.json] [--json]
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -69,7 +69,7 @@ async function loadPlaywright() {
   for (const name of ['playwright', '@playwright/test', 'playwright-core']) {
     try { const m = await import(name); return m.chromium ?? m.default?.chromium } catch { /* try next */ }
   }
-  console.error('anti-ai-slop scan needs Playwright: npm i -D playwright && npx playwright install chromium')
+  console.error('sloplint scan needs Playwright: npm i -D playwright && npx playwright install chromium')
   process.exit(2)
 }
 
@@ -107,17 +107,19 @@ async function annotate(page, findings) {
     layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2147483647'
     for (const f of list) {
       if (!f.rect || f.rect.w < 2) continue
+      // Red: scored tells. Grey dashed: advice (weight 0, as common on professional sites).
+      const color = f.advice ? '#6e7781' : '#d0342c'
       const box = document.createElement('div')
-      box.style.cssText = `position:absolute;left:${f.rect.x}px;top:${f.rect.y}px;width:${f.rect.w}px;height:${f.rect.h}px;outline:2px solid #d0342c;outline-offset:1px`
+      box.style.cssText = `position:absolute;left:${f.rect.x}px;top:${f.rect.y}px;width:${f.rect.w}px;height:${f.rect.h}px;outline:2px ${f.advice ? 'dashed' : 'solid'} ${color};outline-offset:1px`
       const tag = document.createElement('span')
       tag.textContent = f.id
-      tag.style.cssText = 'position:absolute;left:-2px;top:-20px;padding:1px 4px;background:#d0342c;color:#fff;font:600 12px/16px system-ui,sans-serif'
+      tag.style.cssText = `position:absolute;left:-2px;top:-20px;padding:1px 4px;background:${color};color:#fff;font:600 12px/16px system-ui,sans-serif`
       box.append(tag)
       layer.append(box)
     }
     document.body.style.position ||= 'relative'
     document.body.append(layer)
-  }, findings.filter((f) => !f.allowed && !f.belowMin))
+  }, findings.filter((f) => !f.allowed && !f.belowMin).map((f) => ({ ...f, advice: (TELLS[f.id]?.weight ?? 1) === 0 })))
 }
 
 async function scan(urls, args) {
@@ -170,7 +172,7 @@ async function scan(urls, args) {
     }
   }
   await browser.close()
-  const report = { tool: 'anti-ai-slop', version: registry.version, scope, generated: new Date().toISOString(), results }
+  const report = { tool: 'sloplint', version: registry.version, scope, generated: new Date().toISOString(), results }
   writeFileSync(join(outDir, 'report.json'), JSON.stringify(report, null, 2))
   writeFileSync(join(outDir, 'report.html'), html(report, outDir))
   console.log(`\nReport: ${join(outDir, 'report.html')}`)
@@ -200,7 +202,7 @@ function html(report, outDir) {
     return `<section id="r${i}"><h2>${esc(r.url)} <small>${r.viewport.tag}px · score ${r.score} · ${esc(r.band)}</small></h2>
 <div class="split"><div class="findings">${items || '<p>No tells found.</p>'}</div><figure><img loading="lazy" src="${esc(relative(outDir, join(outDir, r.shot)))}" alt="Annotated screenshot of ${esc(r.url)} at ${r.viewport.tag}px"></figure></div></section>`
   }).join('')
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>anti-ai-slop report</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>sloplint report</title>
 <style>
 :root { --ink:#1b1f24; --muted:#59636e; --line:#d8dee4; --bg:#fff; --soft:#f6f8fa; --accent:#0b57d0; --ok:#1a7f37; --warn:#9a6700; --bad:#cf222e; }
 * { box-sizing:border-box } body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif }
@@ -213,7 +215,7 @@ details { border:1px solid var(--line); border-radius:6px; padding:8px 12px; mar
 ul { margin:6px 0 0; padding-left:18px } code { font-size:12px; overflow-wrap:anywhere } figure { margin:0; border:1px solid var(--line); border-radius:6px; overflow:auto; max-height:80vh } figure img { display:block; width:100% }
 @media (max-width: 860px) { .split { grid-template-columns:1fr } }
 </style></head><body><main>
-<h1>anti-ai-slop report</h1><p class="lead">Scope ${esc(report.scope)} · ${esc(report.generated)} · score = sum of weights of distinct tells present; 0–2 clean, 3–6 some slop, 7+ slop.</p>
+<h1>sloplint report</h1><p class="lead">Scope ${esc(report.scope)} · ${esc(report.generated)} · score = sum of weights of distinct tells present; 0–2 clean, 3–6 some slop, 7+ slop.</p>
 <table><thead><tr><th>Page</th><th class="num">Width</th><th class="num">Score</th><th>Verdict</th><th>Tells</th></tr></thead><tbody>${rows}</tbody></table>
 ${sections}</main></body></html>`
 }
@@ -243,9 +245,9 @@ async function main() {
     process.exitCode = found.length ? 1 : 0
   } else {
     console.log(`Usage:
-  anti-ai-slop scan <url|file...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
+  sloplint scan <url|file...> [--viewports 1440,390] [--scope app|landing|both] [--config .slop.json]
                     [--out slop-report] [--hover] [--storage-state auth.json] [--setup login.mjs] [--wait 600]
-  anti-ai-slop static <dir> [--config .slop.json] [--json]`)
+  sloplint static <dir> [--config .slop.json] [--json]`)
     process.exitCode = cmd ? 2 : 0
   }
 }

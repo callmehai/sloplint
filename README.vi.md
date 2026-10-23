@@ -1,4 +1,4 @@
-# anti-ai-slop
+# sloplint
 
 Tìm những kiểu giao diện khiến một front-end web trông như do AI làm ra, rồi thay bằng cách mà
 các design system chuyên nghiệp thật sự làm. Dùng được cho cả giao diện sản phẩm (màn quản trị,
@@ -24,13 +24,13 @@ trang lộ ra là nhiều kiểu cùng xuất hiện một lúc, mà không có 
 
 ## Bộ công cụ có gì
 
-- **Danh sách 54 dấu hiệu** (*tell*) trong `skills/anti-ai-slop/tells.json`. Mỗi dấu hiệu có ID,
+- **Danh sách 54 dấu hiệu** (*tell*) trong `skills/sloplint/tells.json`. Mỗi dấu hiệu có ID,
   phạm vi (app, landing hoặc cả hai), trọng số và cách sửa cụ thể.
-- **Bộ kiểm tra DOM** (`skills/anti-ai-slop/checker/detect.js`) chạy ngay trong trang đã render
+- **Bộ kiểm tra DOM** (`skills/sloplint/checker/detect.js`) chạy ngay trong trang đã render
   và đo computed style, nên thấy đúng thứ mà CSS framework của bạn sinh ra.
 - **Một CLI** mở trang trong Chromium ở khổ desktop và điện thoại, chấm điểm, rồi xuất báo cáo
   HTML kèm ảnh chụp có đánh dấu; thêm một lệnh quét tĩnh mã nguồn.
-- **Một skill cho agent** (`skills/anti-ai-slop/SKILL.md`) dùng với Claude Code, Codex, Cursor và
+- **Một skill cho agent** (`skills/sloplint/SKILL.md`) dùng với Claude Code, Codex, Cursor và
   các agent khác, để tránh dấu hiệu ngay lúc viết code chứ không chỉ bắt lỗi sau.
 - **Tài liệu tham khảo** ghi rõ căn cứ của từng cách sửa:
   - `references/tells.md`: từng dấu hiệu, vì sao trông như máy làm, sửa thế nào
@@ -43,11 +43,9 @@ trang lộ ra là nhiều kiểu cùng xuất hiện một lúc, mà không có 
 
 ## Bắt đầu nhanh
 
-> Tên gói npm `anti-ai-slop` **chỉ là tạm thời**. Trên npm, tên này hiện thuộc về một gói khác
-> không liên quan, nên chừng nào bộ công cụ chưa được publish dưới tên chính thức thì
-> `npx anti-ai-slop` sẽ chạy code của người khác. Trong lúc chờ, hãy chạy CLI từ bản clone của
-> repo này: `node skills/anti-ai-slop/checker/cli.mjs` nhận đúng các lệnh của `npx anti-ai-slop`
-> bên dưới.
+> `sloplint` chưa lên npm. Trong lúc chờ, chạy thẳng từ GitHub bằng
+> `npx github:callmehai/sloplint <lệnh>`, hoặc từ bản clone bằng
+> `node skills/sloplint/checker/cli.mjs <lệnh>`. Cả hai nhận đúng các lệnh của `npx sloplint` bên dưới.
 
 `scan` điều khiển Chromium qua Playwright, chỉ cần cài một lần:
 
@@ -58,13 +56,13 @@ npm i -D playwright && npx playwright install chromium
 Quét một trang đang chạy:
 
 ```bash
-npx anti-ai-slop scan http://localhost:5173 --scope app
+npx sloplint scan http://localhost:5173 --scope app
 ```
 
 Cú pháp đầy đủ:
 
 ```text
-npx anti-ai-slop scan <url...> [--viewports 1440,390] [--scope app|landing|both]
+npx sloplint scan <url...> [--viewports 1440,390] [--scope app|landing|both]
                                [--config .slop.json] [--out slop-report] [--hover]
                                [--setup login.mjs] [--storage-state auth.json] [--wait 600]
 ```
@@ -94,7 +92,7 @@ export default async ({ context, url }) => {
 Quét mã nguồn, không cần trình duyệt:
 
 ```bash
-npx anti-ai-slop static src
+npx sloplint static src
 ```
 
 `static <dir>` đọc các tệp CSS, SCSS, TSX, JSX, HTML, Vue và Svelte để tìm các dấu hiệu có ghi
@@ -109,7 +107,7 @@ Playwright:
 ```js
 import { readFileSync } from 'node:fs';
 
-const detect = readFileSync('skills/anti-ai-slop/checker/detect.js', 'utf8');
+const detect = readFileSync('skills/sloplint/checker/detect.js', 'utf8');
 const options = { ignore: ['.third-party-widget'], allow: {} };
 const result = await page.evaluate(`(${detect})(${JSON.stringify(options)})`);
 // result.findings: [{ id, label, selector, rect, detail, allowed?, reason? }]
@@ -196,24 +194,24 @@ cùng tệp này và sẽ không "sửa" những gì tệp đã cho phép.
 **Claude Code.** Chép thư mục skill vào skill của người dùng hoặc của dự án:
 
 ```bash
-cp -r skills/anti-ai-slop ~/.claude/skills/    # mọi dự án
-cp -r skills/anti-ai-slop .claude/skills/      # chỉ dự án này
+cp -r skills/sloplint ~/.claude/skills/    # mọi dự án
+cp -r skills/sloplint .claude/skills/      # chỉ dự án này
 ```
 
-**Codex và các agent đọc AGENTS.md.** Giữ `skills/anti-ai-slop` trong repo và trỏ tới nó:
+**Codex và các agent đọc AGENTS.md.** Giữ `skills/sloplint` trong repo và trỏ tới nó:
 
 ```markdown
 ## UI
-Before building or reviewing any UI, read `skills/anti-ai-slop/SKILL.md` and follow it.
+Before building or reviewing any UI, read `skills/sloplint/SKILL.md` and follow it.
 ```
 
-**Cursor.** Chép `integrations/cursor/anti-ai-slop.mdc` vào `.cursor/rules/`. Rule này được nạp
-khi làm việc với tệp style và component, và trỏ Cursor tới `skills/anti-ai-slop/SKILL.md`; hãy
+**Cursor.** Chép `integrations/cursor/sloplint.mdc` vào `.cursor/rules/`. Rule này được nạp
+khi làm việc với tệp style và component, và trỏ Cursor tới `skills/sloplint/SKILL.md`; hãy
 giữ thư mục skill đúng đường dẫn đó hoặc sửa đường dẫn trong rule.
 
 ## Danh sách dấu hiệu
 
-Sinh từ `skills/anti-ai-slop/tells.json`, nên tên dấu hiệu giữ nguyên tiếng Anh như trong
+Sinh từ `skills/sloplint/tells.json`, nên tên dấu hiệu giữ nguyên tiếng Anh như trong
 registry. Phạm vi: `app` = giao diện sản phẩm, `landing` = trang marketing. Cách phát hiện:
 `dom` = bộ kiểm tra trong trang, `static` = bộ quét mã nguồn, `manual` = cần người hoặc agent
 đọc màn hình. Cách sửa nằm trong `references/tells.md`.
@@ -278,7 +276,7 @@ registry. Phạm vi: `app` = giao diện sản phẩm, `landing` = trang marketi
 ## Ghi công
 
 Bộ công cụ này dựa trên công sức của nhiều người. Ghi chú đầy đủ ở
-[references/sources.md](skills/anti-ai-slop/references/sources.md).
+[references/sources.md](skills/sloplint/references/sources.md).
 
 - **Adrian Krebs**, với nghiên cứu duy nhất có đo đạc các kiểu này, và phương pháp kiểm tra
   computed style trong trình duyệt thật.
@@ -288,7 +286,7 @@ Bộ công cụ này dựa trên công sức của nhiều người. Ghi chú đ
 - Các skill cộng đồng: **taste-skill** (Leonxlnx), **Impeccable** (Paul Bakaus), **Hallmark**
   (Nutlope / Together AI), **Uncodixfy** (cyxzdev), **antislop** (miqdadbadjuber), **DeSlop**
   (nate-zz), **Anti-AI-UI** (Vanszs), **no-slop-ui** (LeoStehlik) và **anti-ai-slop**
-  (Vinayak-Shukla-03, một dự án khác trùng tên).
+  (Vinayak-Shukla-03).
 - Đội ngũ đứng sau **Cloudscape, Carbon, Atlassian, Primer, Fluent 2, Material 3** và **Apple
   HIG**, với các hướng dẫn công khai làm nền cho mọi cách sửa.
 

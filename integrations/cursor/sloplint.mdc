@@ -4,18 +4,18 @@ globs: **/*.css, **/*.scss, **/*.html, **/*.jsx, **/*.tsx, **/*.vue, **/*.svelte
 alwaysApply: false
 ---
 
-# anti-ai-slop
+# sloplint
 
 Before writing or reviewing UI code, read the skill and follow it:
 
-@skills/anti-ai-slop/SKILL.md
+@skills/sloplint/SKILL.md
 
 The path assumes this kit sits at the repository root. If you vendored it elsewhere, fix the path
 above.
 
 In short:
 
-- The tell list, with a fix for each, is `skills/anti-ai-slop/tells.json` (details in
+- The tell list, with a fix for each, is `skills/sloplint/tells.json` (details in
   `references/tells.md`). Check new UI against it before showing it.
 - Fixes follow the shared design-system baseline in `references/design-systems.md`; copy follows
   `references/copy.md`.
