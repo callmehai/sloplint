@@ -203,7 +203,7 @@
     if (loading(e)) continue
     for (const pseudo of [null, '::before', '::after']) {
       const s = cs(e, pseudo)
-      if (pseudo && (s.content === 'none' || s.content === 'normal')) continue
+      if (pseudo && (s.content === 'none' || s.content === 'normal' || s.display === 'none' || s.visibility === 'hidden')) continue
       const bg = s.backgroundImage
       // C2 gradient text
       if (!pseudo && (s.backgroundClip === 'text' || s.webkitBackgroundClip === 'text') && bg.includes('gradient')) { add('C2', e, short(bg, 60)); continue }
@@ -385,7 +385,7 @@
     if (ins && r.height >= 24 && r.width >= 80) { add('S3', e, 'inset shadow stripe'); continue }
     for (const pseudo of ['::before', '::after']) {
       const p = cs(e, pseudo)
-      if (p.content === 'none' || p.position !== 'absolute') continue
+      if (p.content === 'none' || p.display === 'none' || p.position !== 'absolute') continue
       const w = px(p.width), h = px(p.height)
       const c = solid(p.backgroundColor)
       if (c && hsl(c).s > 0.25 && ((w >= 2 && w <= 6 && h >= r.height * 0.6) || (h >= 2 && h <= 6 && w >= r.width * 0.6)) && r.height >= 24 && r.width >= 80) { add('S3', e, `${pseudo} stripe`); break }
@@ -568,7 +568,7 @@
   for (const e of all) {
     for (const pseudo of ['::before']) {
       const p = cs(e, pseudo)
-      if (p.content === 'none') continue
+      if (p.content === 'none' || p.display === 'none' || p.visibility === 'hidden') continue
       const w = px(p.width), h = px(p.height)
       if (w >= 5 && w <= 12 && Math.abs(w - h) <= 1 && solid(p.backgroundColor) && px(p.borderTopLeftRadius) >= w / 2 - 0.5 && text(e).length > 0 && text(e).length <= 30 && painted(cs(e))) add('L9', e, '::before dot inside a labelled chip')
     }
@@ -583,7 +583,10 @@
       if (cellChips.some((c) => !c)) continue
       const labels = cellChips.map((c) => text(c))
       const top = Math.max(...[...new Set(labels)].map((l) => labels.filter((x) => x === l).length))
-      if (top / labels.length >= 0.75) { add('L10', cellChips[0], `column ${i + 1}: «${labels[0]}» on ${top}/${labels.length} rows`); break }
+      const common = labels.find((l) => labels.filter((x) => x === l).length === top)
+      // Every row the same because a filter on the page selects that value: the data, not the design.
+      const filteredTo = all.some((n) => n !== table && !table.contains(n) && n.matches('button, select, [role="combobox"], [aria-pressed="true"], [aria-selected="true"], [class*="filter"], [class*="select"]') && text(n) === common)
+      if (top / labels.length >= 0.75 && !filteredTo) { add('L10', cellChips[0], `column ${i + 1}: «${labels[0]}» on ${top}/${labels.length} rows`); break }
     }
   }
 
@@ -635,7 +638,7 @@
   for (const e of all) {
     for (const pseudo of ['::before', '::after']) {
       const p = cs(e, pseudo)
-      if (p.content !== 'none' && p.animationName !== 'none' && p.animationIterationCount === 'infinite' && !loading(e)) add('M1', e, `${pseudo} ${p.animationName}`)
+      if (p.content !== 'none' && p.display !== 'none' && p.animationName !== 'none' && p.animationIterationCount === 'infinite' && !loading(e)) add('M1', e, `${pseudo} ${p.animationName}`)
     }
   }
 
@@ -715,7 +718,9 @@
       const titleWords = new Set(text(h1).toLowerCase().split(/\s+/).filter((w) => w.length > 3))
       const overlap = text(next).toLowerCase().split(/\s+/).filter((w) => titleWords.has(w)).length
       const explains = /^(here you can|this page|use this|manage|view|browse|quản lý|xem|danh sách|đây là|tại đây)/i.test(text(next))
-      if (words >= 6 && !/\d/.test(text(next)) && (overlap >= 2 || explains)) add('W3', next, `${words}-word subtitle restating the title`)
+      // Error and not-found pages must explain what happened and what to do next.
+      const errorPage = /\b(404|500|not found|error|went wrong|không tìm thấy|không tồn tại|lỗi|có lỗi)\b/i.test(text(h1)) || !!document.querySelector('[role="alert"]')
+      if (words >= 6 && !/\d/.test(text(next)) && (overlap >= 2 || explains) && !errorPage) add('W3', next, `${words}-word subtitle restating the title`)
     }
   }
   for (const n of textNodes) {
