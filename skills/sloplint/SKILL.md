@@ -128,7 +128,7 @@ Scan the old build into one report and the new one into another, with the same U
 URL is paired by order and flagged). Read `slop-diff/diff.json`: every item should be a fix you
 meant. An item you did not intend is a regression; a tell you meant to fix that is not in
 `fixed` is still there. Link `slop-diff/diff.html` from your report: it shows each change with
-the same number on the before and after screenshots.
+a sentence and a before/after crop per change.
 
 ## Score
 

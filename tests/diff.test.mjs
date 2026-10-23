@@ -23,17 +23,18 @@ test('diff: the removed chips, the new text and the darker empty value are each 
     const [page] = JSON.parse(readFileSync(join(dir, 'd', 'diff.json'), 'utf8')).pages
     assert.deepEqual(page.fixed, ['L10'])
     assert.deepEqual(page.new, [])
-    const line = (g) => `${g.kind} ${g.label} «${g.text}» ×${Math.max(g.before, g.after)} ${g.tells.join(' ')} ${g.changes.map((c) => c.join(' → ')).join('; ')}`
+    const line = (g) => `${g.kind} ${g.label} «${g.text}» ×${Math.max(g.before, g.after)} fixes:${g.fixes.join(' ')} | ${g.summary.join('; ')}`
     const items = page.items.map(line)
     const has = (re) => items.filter((t) => re.test(t)).length
-    assert.equal(has(/^removed span\.chip «Active» ×5 L10/), 1, items.join('\n'))
-    assert.equal(has(/^changed main > h1 «People in Remit» ×1 +text → People → People in Remit$/), 1, items.join('\n'))
-    assert.equal(has(/^changed span\.empty «No team» ×1 +color → rgb\(180, 186, 193\) → rgb\(89, 99, 110\)$/), 1, items.join('\n'))
-    assert.equal(has(/^changed tr > td «Active» ×5/), 1, items.join('\n'))
-    assert.equal(items.length, 4, items.join('\n'))
-    // Boxes: the chips on the before screenshot only, each changed element on both.
+    // The chip removed from each status cell is one change of the cell, which fixes L10.
+    assert.equal(has(/^fixed tr > td «Active» ×5 fixes:L10 \| span\.chip «Active» removed; text «» → «Active»$/), 1, items.join('\n'))
+    assert.equal(has(/^changed main > h1 «People in Remit» ×1 fixes: \| text «People» → «People in Remit»$/), 1, items.join('\n'))
+    assert.equal(has(/^changed span\.empty «No team» ×1 fixes: \| text colour$/), 1, items.join('\n'))
+    assert.equal(items.length, 3, items.join('\n'))
+    // Every card has a crop on both sides.
     const html = readFileSync(join(dir, 'd', 'diff.html'), 'utf8')
-    assert.equal(html.match(/class="box /g).length, 5 + 2 * (1 + 1 + 5))
+    assert.equal(html.match(/<article class="card"/g).length, 3)
+    assert.equal(html.match(/class="crop"/g).length, 6)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

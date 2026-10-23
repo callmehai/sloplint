@@ -99,11 +99,13 @@ npx sloplint diff before after --out slop-diff
 
 `diff` ghép trang theo đường dẫn và độ rộng, rồi so từng phần tử đang hiển thị: chữ, các style
 người xem thấy được (màu, cỡ chữ, độ đậm, nền, viền, bo góc, bóng, khoảng cách), `::before`/`::after`,
-icon, và các dấu hiệu tìm thấy trên nó. Mỗi thay đổi là một mục có số, khoanh trên cả hai ảnh: đỏ
-là chỗ có dấu hiệu, xanh lá là chỗ đã sửa, xanh dương là thay đổi khác, nét đứt là phần tử bị bỏ
-hoặc thêm. Cùng một thay đổi trên nhiều dòng gộp thành một mục. `slop-diff/diff.json` chứa đúng
-các mục đó để agent đọc. Mỗi lần quét giữ thêm ảnh không khoanh và snapshot phần tử cho việc này;
-`--no-snapshot` để bỏ qua.
+icon, và các dấu hiệu tìm thấy trên nó. Mỗi thay đổi là một thẻ có số: một câu nói đổi gì ("icon
+added, ::before marker removed, background removed") và cùng một vùng cắt từ ảnh trước và ảnh
+sau, khung xanh lá là dấu hiệu đã sửa, đỏ là dấu hiệu mới, xanh dương là thay đổi khác. Cùng một
+thay đổi trên nhiều dòng gộp thành một thẻ; phần tử con bị thêm hoặc bỏ (icon, chip) tính là thay
+đổi của phần tử cha. Ảnh toàn trang có khoanh mọi thay đổi nằm gập dưới mỗi trang.
+`slop-diff/diff.json` chứa đúng các mục đó để agent đọc. Mỗi lần quét giữ thêm snapshot phần tử
+và ảnh 2x đã mở bung các vùng cuộn cho việc này; `--no-snapshot` để bỏ qua.
 
 Quét mã nguồn, không cần trình duyệt:
 

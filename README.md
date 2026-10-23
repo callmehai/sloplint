@@ -99,11 +99,14 @@ npx sloplint diff before after --out slop-diff
 
 `diff` pairs pages by path and width, then compares every visible element: its text, the computed
 styles a reader can see (colour, size, weight, background, border, radius, shadow, spacing), its
-`::before`/`::after`, its icon, and the tells found on it. Each change becomes a numbered item with
-a box on both screenshots: red where a tell was, green where it was fixed, blue for any other
-change, dashed for removed or added elements. The same change on many rows is one item.
-`slop-diff/diff.json` holds the same items for an agent to read. Each scan keeps an unmarked
-screenshot and an element snapshot for this; `--no-snapshot` skips them.
+`::before`/`::after`, its icon, and the tells found on it. Each change becomes a numbered card: one
+sentence on what changed ("icon added, ::before marker removed, background removed") and the same
+region cropped from both screenshots, outlined green where a tell was fixed, red where one
+appeared, blue for any other change. The same change on many rows is one card, and a child added
+or removed (an icon, a chip) is a change of its parent. Full screenshots with every change boxed
+sit under each page. `slop-diff/diff.json` holds the same items for an agent to read. Each scan
+keeps an element snapshot and a 2x screenshot with scrolling panels opened for this;
+`--no-snapshot` skips them.
 
 Scan source files without a browser:
 

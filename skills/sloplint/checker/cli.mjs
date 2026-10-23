@@ -126,6 +126,22 @@ async function annotate(page, findings) {
   }, findings.filter((f) => !f.allowed && !f.belowMin).map((f) => ({ ...f, advice: (TELLS[f.id]?.weight ?? 1) === 0 })))
 }
 
+/** Removes the annotation layer and lets every scrolling panel, and the boxes that clip it, grow to its content. */
+function unclip() {
+  document.getElementById('__slop_layer')?.remove()
+  const open = (e) => {
+    for (const [p, v] of [['overflow', 'visible'], ['max-height', 'none'], ['height', 'auto']]) e.style.setProperty(p, v, 'important')
+  }
+  const scrollers = [...document.querySelectorAll('body *')].filter((e) => {
+    const s = getComputedStyle(e)
+    return /auto|scroll/.test(`${s.overflowX} ${s.overflowY}`) && (e.scrollHeight > e.clientHeight + 1 || e.scrollWidth > e.clientWidth + 1)
+  })
+  for (const e of scrollers) {
+    open(e)
+    for (let p = e.parentElement; p; p = p.parentElement) if (getComputedStyle(p).overflow !== 'visible' || p === document.body || p === document.documentElement) open(p)
+  }
+}
+
 async function scan(urls, args) {
   const chromium = await loadPlaywright()
   const cfgPath = args.config ?? '.slop.json'
@@ -144,6 +160,8 @@ async function scan(urls, args) {
     for (const vp of viewports) {
       const context = await browser.newContext({
         viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile,
+        // Sharp crops in `sloplint diff`; detection works in CSS pixels and is unaffected.
+        deviceScaleFactor: snapshots ? 2 : 1,
         storageState: args['storage-state'] && existsSync(args['storage-state']) ? args['storage-state'] : undefined,
       })
       const page = await context.newPage()
@@ -157,14 +175,6 @@ async function scan(urls, args) {
         await page.mouse.move(1, 1)
         const res = await page.evaluate(`(${DETECT})(${JSON.stringify(options)})`)
         const slug = `${new URL(url).hostname || 'file'}${new URL(url).pathname}`.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'page'
-        // For `sloplint diff`: the page as it is, and every visible element with the tells found on it.
-        const extra = {}
-        if (snapshots) {
-          extra.snap = join('shots', `${slug}-${vp.tag}.dom.json`)
-          extra.clean = join('shots', `${slug}-${vp.tag}.clean.jpg`)
-          writeFileSync(join(outDir, extra.snap), JSON.stringify(await page.evaluate(`(${SNAPSHOT})()`)))
-          await page.screenshot({ path: join(outDir, extra.clean), fullPage: true, type: 'jpeg', quality: 85 })
-        }
         if (args.hover && !vp.mobile) {
           const seen = new Set(res.findings.filter((f) => f.id === 'M2').map((f) => `${f.rect?.x},${f.rect?.y}`))
           for (const f of await hoverPass(page)) if (!seen.has(`${f.rect.x},${f.rect.y}`)) res.findings.push(f)
@@ -174,6 +184,17 @@ async function scan(urls, args) {
         const shot = join('shots', `${slug}-${vp.tag}.jpg`)
         await annotate(page, res.findings)
         await page.screenshot({ path: join(outDir, shot), fullPage: true, type: 'jpeg', quality: 70, clip: undefined }).catch(() => page.screenshot({ path: join(outDir, shot), type: 'jpeg', quality: 70 }))
+        // For `sloplint diff`: every visible element with the tells found on it, and an unmarked
+        // screenshot. Scrolling panels are opened first, so rows a panel hides are in the picture.
+        const extra = {}
+        if (snapshots) {
+          extra.snap = join('shots', `${slug}-${vp.tag}.dom.json`)
+          extra.clean = join('shots', `${slug}-${vp.tag}.clean.jpg`)
+          await page.evaluate(unclip)
+          await page.waitForTimeout(150)
+          writeFileSync(join(outDir, extra.snap), JSON.stringify(await page.evaluate(`(${SNAPSHOT})()`)))
+          await page.screenshot({ path: join(outDir, extra.clean), fullPage: true, type: 'jpeg', quality: 85 })
+        }
         results.push({ url, ...res, viewport: vp, ...s, band: band(s.score)[1], shot, ...extra })
       } catch (e) {
         error = String(e?.message ?? e).split('\n')[0]
