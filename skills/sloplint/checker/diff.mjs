@@ -200,8 +200,10 @@ export function diffReports(beforeDir, afterDir, outDir, { byOrder = false } = {
 /** A short summary for a pull-request comment or a CI job summary. */
 function markdown(summary) {
   const ids = (l) => (l?.length ? l.join(' ') : '–')
-  const rows = summary.map((p) => `| ${p.path.replace(/^https?:\/\/[^/]+/, '')} | ${p.viewport} | ${p.skipped ? '–' : `${p.score[0]} → ${p.score[1]}`} | ${ids(p.fixed)} | ${ids(p.new)} | ${p.skipped ? 'skipped' : p.items.length} |`)
-  const cards = summary.filter((p) => p.items.length).map((p) => `**${p.path.replace(/^https?:\/\/[^/]+/, '')} at ${p.viewport}px**\n\n${p.items.map((g) => {
+  // A page by its path: no origin for a URL, relative to the working directory for a file.
+  const where = (u) => (u.startsWith('file:') ? relative(process.cwd(), fileURLToPath(u)) : u.replace(/^https?:\/\/[^/]+/, ''))
+  const rows = summary.map((p) => `| ${where(p.path)} | ${p.viewport} | ${p.skipped ? '–' : `${p.score[0]} → ${p.score[1]}`} | ${ids(p.fixed)} | ${ids(p.new)} | ${p.skipped ? 'skipped' : p.items.length} |`)
+  const cards = summary.filter((p) => p.items.length).map((p) => `**${where(p.path)} at ${p.viewport}px**\n\n${p.items.map((g) => {
     const n = Math.max(g.before, g.after)
     const tells = [g.fixes.length ? `fixes ${g.fixes.join(' ')}` : '', g.adds.length ? `**adds ${g.adds.join(' ')}**` : ''].filter(Boolean).join(', ')
     return `${g.n}. ${KIND[g.kind]} \`${g.label.split(' > ').pop()}\`${g.text ? ` «${g.text.slice(0, 40)}»` : ''}${n > 1 ? ` on ${n} elements` : ''}: ${g.summary.slice(0, 4).join(', ')}${tells ? `. ${tells}` : ''}`
