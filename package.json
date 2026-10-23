@@ -15,11 +15,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "scan:fixtures": "node skills/sloplint/checker/cli.mjs scan fixtures/slop-app.html fixtures/clean-app.html fixtures/slop-landing.html fixtures/clean-landing.html --out slop-report --hover"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "peerDependencies": {
     "playwright": ">=1.40"
