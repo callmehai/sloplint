@@ -277,7 +277,8 @@ async function main() {
     if (args['fail-on-new'] && pages.some((p) => p.new?.length)) process.exitCode = 1
   } else if (cmd === 'static' && args._.length) {
     const dir = resolve(args._[0])
-    const cfgPath = args.config ?? join(dir, '.slop.json')
+    // The scanned folder's own .slop.json, else the one in the working directory (the project root).
+    const cfgPath = args.config ?? [join(dir, '.slop.json'), '.slop.json'].find((p) => existsSync(p)) ?? '.slop.json'
     const config = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {}
     const found = scanStatic(dir, config)
     if (args.json) console.log(JSON.stringify(found, null, 2))

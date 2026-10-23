@@ -54,7 +54,7 @@ const RULES = [
   { id: 'S9', where: 'markup', re: /\bbg-\[radial-gradient[^\]]*\]|\bblur-\[\d{2,}px\]/g, msg: 'Tailwind radial blob' },
   { id: 'M4', where: 'style', re: /(\.fade-?(in-?)?up|\.reveal|\[data-aos[^\]]*\]|\.aos-[\w-]+|\.slide-?up)\b[^{]*\{/g, msg: 'scroll-reveal class in CSS' },
   { id: 'S6', where: 'style', re: /box-shadow:[^;]*\b\d+(px)?\s+([4-9]\d|\d{3,})px\s+([6-9]\d|\d{3,})px/g, msg: 'dramatic drop shadow' },
-  { id: 'A2', where: 'style', re: /([^{}]+)\{[^{}]*outline-style:\s*none[^{}]*\}/g, msg: 'outline-style removed', test: (m) => !/:focus-visible/.test(m[1]) },
+  { id: 'A2', where: 'style', re: /([^{}]+)\{[^{}]*outline-style:\s*none[^{}]*\}/g, msg: 'outline-style removed', test: (m, _sel, css) => !/:focus-visible/.test(m[1]) && !focusDrawn(css, m[1]) },
   { id: 'L8', where: 'markup', re: /(?<![\w$])(Sparkles?|WandSparkles|SparklesIcon)(?![\w$])/g, msg: 'sparkle icon' },
   { id: 'L8', where: 'markup', re: />[^<{}]*\p{Extended_Pictographic}[^<{}]*</gu, msg: 'emoji in markup text', test: (m) => !/[©®™]/.test(m[0]) },
   { id: 'L11', where: 'markup', re: /['"`]\s·\s['"`]|\}\s·\s\{|\s·\s\$\{|>\s*[^<{]*\s·\s[^<{]*</g, msg: 'middle-dot join' },
@@ -65,7 +65,7 @@ const RULES = [
   { id: 'M3', where: 'any', re: /transition(-property)?:\s*all\b|\btransition-all\b/g, msg: 'transition: all' },
   { id: 'M4', where: 'markup', re: /\bdata-aos=|\bwhileInView\b|\buseInView\b|\banimate-(fade-in-up|fade-up|slide-up)\b|\bfade-?(in-?)?up\b/g, msg: 'scroll reveal' },
   { id: 'A2', where: 'style', re: /([^{}]+)\{[^{}]*outline:\s*(none|0)\b[^{}]*\}/g, msg: 'outline removed',
-    test: (m) => !/:focus-visible/.test(m[1]) },
+    test: (m, _sel, css) => !/:focus-visible/.test(m[1]) && !focusDrawn(css, m[1]) },
   { id: 'A2', where: 'markup', re: /["'`][^"'`]*\b(focus:)?outline-none\b[^"'`]*["'`]/g, msg: 'outline-none',
     test: (m) => !/focus-visible:(ring|outline)/.test(m[0]) },
 ]
@@ -98,11 +98,25 @@ function* files(dir) {
   }
 }
 
+/** Whether the stylesheet draws focus for these selectors another way (a :focus-visible ring or shadow). */
+function focusDrawn(css, selectors) {
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return selectors.split(',').map((x) => x.trim()).filter(Boolean).every((sel) =>
+    new RegExp(`${esc(sel)}:focus(-visible)?[^{]*\\{[^}]*(box-shadow|outline|border-color)`).test(css))
+}
+
 export function scanStatic(root, { allow = {} } = {}) {
   const findings = []
   let anyMotion = false
   let anyReduced = false
-  const allowed = (id) => allow[id] && (typeof allow[id] !== 'object' || !allow[id].selector)
+  // An exception with a selector applies to a rule whose selector names one of the listed parts.
+  const allowed = (id, sel = '') => {
+    const a = allow[id]
+    if (!a) return false
+    if (typeof a !== 'object' || !a.selector) return true
+    return a.selector.split(',').map((x) => x.replace(/\s*\*\s*$/, '').trim()).filter(Boolean)
+      .some((part) => new RegExp(`(^|[\\s>+~,(])${part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`).test(sel))
+  }
   for (const file of files(root)) {
     const ext = extname(file)
     const raw = readFileSync(file, 'utf8')
@@ -113,8 +127,8 @@ export function scanStatic(root, { allow = {} } = {}) {
     if (/@keyframes|animation:|\banimate-|transition:[^;]*transform|whileInView|data-aos/.test(src)) anyMotion = true
     if (/prefers-reduced-motion|motion-reduce:|motion-safe:|useReducedMotion/.test(src)) anyReduced = true
     const push = (id, index, msg, text) => {
-      if (allowed(id)) return
       const sel = selectorAt(src, index)
+      if (allowed(id, sel.split('\n').pop())) return
       findings.push({ id, file: relative(root, file), line: lineOf(src, index), msg, selector: sel.split('\n').pop().slice(0, 80), text: text.trim().replace(/\s+/g, ' ').slice(0, 100) })
     }
     const perFile = {}
@@ -122,9 +136,11 @@ export function scanStatic(root, { allow = {} } = {}) {
       const targets = rule.where === 'style' ? styleChunks : rule.where === 'markup' ? (kind === 'markup' ? [{ text: src, offset: 0 }] : []) : [{ text: src, offset: 0 }]
       for (const t of targets) {
         for (const m of t.text.matchAll(rule.re)) {
-          if (rule.test && !rule.test(m, selectorAt(t.text, m.index))) continue
-          if (rule.perFile) { perFile[rule.id] = perFile[rule.id] ?? []; perFile[rule.id].push(t.offset + m.index); continue }
-          push(rule.id, t.offset + m.index, rule.msg, m[0])
+          if (rule.test && !rule.test(m, selectorAt(t.text, m.index), t.text)) continue
+          // A match that starts with whitespace before its selector points at the selector's line.
+          const at = t.offset + m.index + (m[0].length - m[0].trimStart().length)
+          if (rule.perFile) { perFile[rule.id] = perFile[rule.id] ?? []; perFile[rule.id].push(at); continue }
+          push(rule.id, at, rule.msg, m[0])
         }
       }
     }
